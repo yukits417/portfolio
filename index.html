@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Portfolio</title>
     <!-- 引入西方古典衬线字体 Cinzel、Cormorant Garamond 与代码字体 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -172,6 +172,7 @@
             cursor: grab;
             user-select: none;
             -webkit-user-select: none;
+            touch-action: none;
         }
         .space-earth-viewport:active {
             cursor: grabbing;
@@ -228,6 +229,10 @@
         }
         .orbit-badge-card:active {
             opacity: 0.85;
+        }
+
+        .orbit-badge-label {
+            display: none;
         }
 
         /* 纯图标微光浮动气泡提示 (只在鼠标悬停时轻柔显现，默认只保留纯净发光图标) */
@@ -569,30 +574,98 @@
 
         @media (max-width: 860px) {
             .editorial-container {
-                padding: 36px 18px 60px 18px;
+                padding: calc(24px + env(safe-area-inset-top, 20px)) 20px calc(48px + env(safe-area-inset-bottom, 24px)) 20px;
             }
             .tarot-modal-close-btn {
-                top: 16px;
-                right: 18px;
-                width: 38px;
-                height: 38px;
+                top: max(16px, env(safe-area-inset-top, 16px));
+                right: max(16px, env(safe-area-inset-right, 16px));
+                width: 42px;
+                height: 42px;
+                z-index: 120;
             }
+            /* 手机端正序排列：标题正文在上，古典插画在后，绝不遮挡文章 */
             .editorial-content-split {
-                flex-direction: column-reverse;
-                gap: 28px;
+                flex-direction: column;
+                gap: 32px;
+            }
+            .editorial-left {
+                width: 100%;
             }
             .editorial-right {
                 width: 100%;
-                max-width: 260px;
-                margin: 0 auto;
+                max-width: 280px;
+                margin: 12px auto 0 auto;
                 position: static;
             }
             .editorial-media-card {
                 width: 100%;
+                box-shadow: 4px 6px 0px rgba(0, 0, 0, 0.9);
+            }
+            .editorial-title {
+                font-size: clamp(25px, 6.4vw, 32px);
+                margin-bottom: 20px;
+                padding-bottom: 12px;
+                padding-right: 28px;
             }
             .editorial-text p {
-                font-size: 1.15rem;
-                line-height: 2.05;
+                font-size: 1.12rem;
+                line-height: 2.0;
+                margin-bottom: 18px;
+            }
+            .editorial-references-title {
+                font-size: 1.05rem;
+            }
+            .editorial-reference-box {
+                padding: 10px 14px;
+            }
+            .ref-url-text {
+                font-size: 0.86rem;
+            }
+        }
+
+        /* 移动端专属自适应 (仅在手机等触屏窄屏设备生效，桌面端毫厘不改) */
+        @media (max-width: 768px) {
+            /* 手机端 Orbit Badge 气泡常驻微标 */
+            .orbit-badge-card::after {
+                display: none !important;
+            }
+            .orbit-badge-label {
+                display: block;
+                position: absolute;
+                top: calc(100% + 5px);
+                left: 50%;
+                transform: translateX(-50%);
+                font-family: 'Cinzel', 'Songti SC', 'STSong', serif;
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.04em;
+                color: #e0f2fe;
+                white-space: nowrap;
+                text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(56, 189, 248, 0.6);
+                pointer-events: none;
+            }
+
+            /* 避开 iPhone 刘海屏与系统状态栏 */
+            .home-btn {
+                top: max(16px, env(safe-area-inset-top, 16px));
+                left: max(16px, env(safe-area-inset-left, 16px));
+            }
+            .top-controls {
+                top: max(16px, env(safe-area-inset-top, 16px));
+                right: max(16px, env(safe-area-inset-right, 16px));
+            }
+            .bottom-nav {
+                bottom: max(24px, env(safe-area-inset-bottom, 24px));
+            }
+            .home-text-container {
+                left: 6%;
+                right: 6%;
+                top: 24%;
+                transform: none;
+                font-size: 1.65rem;
+                letter-spacing: 4px;
+                text-align: center;
+                align-items: center;
             }
         }
 
@@ -843,6 +916,7 @@
                                 <circle cx="12" cy="7" r="4"/>
                             </svg>
                         </div>
+                        <span class="orbit-badge-label">自我介绍</span>
                     </div>
 
                     <!-- 2. 与编程的相遇 (Code & Terminal) -->
@@ -854,6 +928,7 @@
                                 <line x1="14" y1="4" x2="10" y2="20"/>
                             </svg>
                         </div>
+                        <span class="orbit-badge-label">编程初遇</span>
                     </div>
 
                     <!-- 3. 嵌入式与无人机自控 (Quadcopter Drone & Flight Autopilot) -->
@@ -875,6 +950,7 @@
                                 <line x1="15" y1="18" x2="21" y2="18"/>
                             </svg>
                         </div>
+                        <span class="orbit-badge-label">自控无人机</span>
                     </div>
 
                     <!-- 4. 从想法到落地 (From Idea to Reality) -->
@@ -886,6 +962,7 @@
                                 <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/>
                             </svg>
                         </div>
+                        <span class="orbit-badge-label">想法与落地</span>
                     </div>
                 </div>
 
@@ -1759,7 +1836,22 @@
 
         const earthScene = new THREE.Scene();
         const earthCamera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
-        earthCamera.position.set(0, 0, 5.8);
+        
+        function updateEarthCameraViewport() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const aspect = w / h;
+            earthCamera.aspect = aspect;
+            if (aspect < 1.0) {
+                // 移动端竖屏：动态自适应将相机拉远至 8.2 ~ 9.5，使地球与 4 个光环节点完美聚拢在手机屏幕中央
+                earthCamera.position.z = Math.min(10.2, Math.max(7.8, 5.8 / Math.max(aspect, 0.52)));
+            } else {
+                // 电脑端宽屏：严格保持原来的 5.8，毫厘不改！
+                earthCamera.position.z = 5.8;
+            }
+            earthCamera.updateProjectionMatrix();
+        }
+        updateEarthCameraViewport();
 
         const earthRenderer = new THREE.WebGLRenderer({
             canvas: earthCanvas,
@@ -3737,9 +3829,8 @@
             // 背景画布
             bgRenderer.setSize(w, h);
 
-            // 地球摄像机
-            earthCamera.aspect = w / h;
-            earthCamera.updateProjectionMatrix();
+            // 地球摄像机 (移动端竖屏自动拉远，桌面宽屏保持 5.8)
+            updateEarthCameraViewport();
             earthRenderer.setSize(w, h);
         });
     </script>
