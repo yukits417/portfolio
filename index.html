@@ -1,0 +1,3747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio</title>
+    <!-- 引入西方古典衬线字体 Cinzel、Cormorant Garamond 与代码字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Cinzel+Decorative:wght@700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* 白天模式 (通透现代背景 + 典雅复古手工纸) */
+            --bg-color: #f1f3f9;
+            --bg-deep: #e2e7f3;
+            --scanline-color: rgba(0, 0, 0, 0.04);
+            --card-bg: rgba(255, 255, 255, 0.65);
+            --card-border: rgba(255, 255, 255, 0.9);
+            --btn-bg: rgba(255, 255, 255, 0.85);
+            --btn-border: rgba(0, 0, 0, 0.1);
+            --btn-color: #1e293b;
+            --btn-hover-bg: #ffffff;
+            --btn-hover-border: rgba(99, 102, 241, 0.5);
+            --btn-hover-shadow: rgba(99, 102, 241, 0.25);
+            --shadow-color: rgba(100, 116, 139, 0.18);
+            --text-color: #0f172a;
+            --ambient-light: 0.95;
+            --dir-light: 1.8;
+            --brightness-mult: 1.0;
+
+
+        }
+
+        body.dark-mode {
+            /* 黑夜模式 */
+            --bg-color: #08090d;
+            --bg-deep: #030305;
+            --scanline-color: rgba(0, 0, 0, 0.25);
+            --card-bg: rgba(20, 22, 32, 0.65);
+            --card-border: rgba(255, 255, 255, 0.12);
+            --btn-bg: rgba(255, 255, 255, 0.08);
+            --btn-border: rgba(255, 255, 255, 0.2);
+            --btn-color: rgba(255, 255, 255, 0.88);
+            --btn-hover-bg: rgba(255, 255, 255, 0.22);
+            --btn-hover-border: rgba(255, 255, 255, 0.6);
+            --btn-hover-shadow: rgba(255, 255, 255, 0.2);
+            --shadow-color: rgba(0, 0, 0, 0.6);
+            --text-color: #f8fafc;
+            --ambient-light: 0.6;
+            --dir-light: 1.4;
+
+
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            transition: background-color 0.5s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        #webgl-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        #projection-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .scanlines {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            background: linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0),
+                rgba(255, 255, 255, 0) 50%,
+                var(--scanline-color) 50%,
+                var(--scanline-color)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            transition: background 0.5s ease;
+        }
+
+        .pages-viewport {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            pointer-events: none;
+        }
+        .page-view {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.5s;
+            pointer-events: none;
+        }
+        .page-view.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .page-content-slot {
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* 主页文字特效样式 */
+        .home-text-container {
+            position: absolute;
+            left: 8%;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            color: var(--text-color);
+            font-size: 2.2rem;
+            font-weight: 300;
+            letter-spacing: 6px;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        .home-text-container span {
+            display: inline-block;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.3s ease, text-shadow 0.3s ease;
+            cursor: default;
+        }
+
+        .home-text-container span:hover {
+            transform: scale(1.6);
+            color: #6366f1;
+            text-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        /* ----------------------------------------------------
+           3D 全息粒子地球与数据脉冲系统 (参考 VJ 动态粒子视觉风格)
+           深邃纯黑背景 · 银白冰蓝微粒 · 辐射光针 · 双轨光环 · 纯净圆环图标
+        ---------------------------------------------------- */
+        .space-earth-viewport {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 50%, #0d122e 0%, #070a1c 45%, #02030a 80%, #000003 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .space-earth-viewport:active {
+            cursor: grabbing;
+        }
+
+        #earth-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: auto;
+        }
+
+        /* 3D 投影到屏幕的轨道悬浮纯图标节点层 (无多余文字标签) */
+        .orbit-nodes-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 12;
+            overflow: hidden;
+        }
+
+        .orbit-badge-card {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: auto;
+            cursor: pointer;
+            height: 46px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            background: rgba(8, 14, 26, 0.78);
+            border: 1.5px solid rgba(224, 242, 254, 0.55);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 0 25px rgba(186, 230, 253, 0.45), inset 0 0 12px rgba(255, 255, 255, 0.25);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, opacity 0.2s ease, visibility 0.2s ease;
+            user-select: none;
+            will-change: transform, opacity;
+        }
+        .orbit-badge-card {
+            width: 48px;
+        }
+        .orbit-badge-card:hover {
+            border-color: #ffffff;
+            background: rgba(15, 23, 42, 0.95);
+            box-shadow: 0 0 35px rgba(255, 255, 255, 0.95), 0 0 50px rgba(56, 189, 248, 0.75);
+        }
+        .orbit-badge-card:active {
+            opacity: 0.85;
+        }
+
+        /* 纯图标微光浮动气泡提示 (只在鼠标悬停时轻柔显现，默认只保留纯净发光图标) */
+        .orbit-badge-card::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            padding: 5px 12px;
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid rgba(56, 189, 248, 0.6);
+            border-radius: 999px;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            letter-spacing: 0.04em;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 12px rgba(56, 189, 248, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 25;
+        }
+        .orbit-badge-card:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .orbit-badge-icon-wrap {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f0f9ff;
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .orbit-badge-card:hover .orbit-badge-icon-wrap {
+            transform: scale(1.15);
+            color: #ffffff;
+        }
+        .orbit-badge-icon-wrap svg {
+            width: 22px;
+            height: 22px;
+            filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.6));
+        }
+
+        /* ----------------------------------------------------
+           太空详细信息弹窗卡片 (Cosmic Glass Modal Dialog)
+        ---------------------------------------------------- */
+        /* ----------------------------------------------------
+           瑞士极简画廊 / 典藏档案全屏展陈 (Signal-A Studio Editorial Style)
+        ---------------------------------------------------- */
+        .space-modal-stage {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: #dbe7dc;
+            background-image: 
+                radial-gradient(circle at 50% 18%, rgba(242, 248, 242, 0.8) 0%, rgba(219, 231, 220, 0.96) 65%, #cfe0d1 100%),
+                repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(45, 100, 99, 0.025) 3px, rgba(45, 100, 99, 0.025) 6px),
+                repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(45, 100, 99, 0.025) 3px, rgba(45, 100, 99, 0.025) 6px);
+            color: #173733;
+            overflow-y: auto;
+            overflow-x: hidden;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s;
+            -webkit-overflow-scrolling: touch;
+        }
+        .space-modal-stage.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        /* 悬浮古典塔罗关闭按键 (无上方白色多余板块) */
+        .tarot-modal-close-btn {
+            position: fixed;
+            top: 26px;
+            right: 32px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(235, 244, 236, 0.9);
+            border: 1.5px solid #2d6463;
+            color: #1c3d39;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 120;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 4px 14px rgba(32, 69, 68, 0.16), 0 0 0 2px rgba(216, 183, 107, 0.45);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .tarot-modal-close-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+            background: #2d6463;
+            color: #ffffff;
+            box-shadow: 0 6px 18px rgba(32, 69, 68, 0.3), 0 0 0 2px #d8b76b;
+        }
+
+        /* 古典淡绿塔罗动态背景画布 (慢速自转浑天星盘与古典星尘) */
+        #tarotBgCanvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* 全屏像素方块浮动重组动效画布 */
+        #pixelAssemblyCanvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 105;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 0.35s ease;
+        }
+
+        /* 底部导航仅在主页显示，进入宇宙与板块展陈时彻底隐藏 */
+        body:has(#page-room.active) #bottomNav,
+        body:has(#spaceModalStage.active) #bottomNav {
+            display: none !important;
+        }
+
+        .editorial-container {
+            width: 100%;
+            max-width: 1140px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: transparent;
+            position: relative;
+            padding: 48px 36px 80px 36px;
+            box-sizing: border-box;
+            opacity: 0;
+            transform: translateY(22px) scale(0.985);
+            transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 10;
+        }
+        .editorial-container.revealed {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* 独立板块展陈 (图文并茂经典画廊版式) */
+        .editorial-dossier-list {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+        .editorial-item {
+            display: none;
+            padding: 16px 0 48px 0;
+            width: 100%;
+        }
+        .editorial-item.active {
+            display: block;
+            animation: editorialFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes editorialFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 图文分栏架构 */
+        .editorial-content-split {
+            display: flex;
+            gap: 48px;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+        .editorial-left {
+            flex: 1;
+            min-width: 0;
+        }
+        .editorial-right {
+            width: 270px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 96px;
+        }
+
+        /* 典藏画卷照片卡片 */
+        .editorial-media-card {
+            width: 270px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1.5px solid #000000;
+            box-shadow: 6px 8px 0px rgba(0, 0, 0, 0.95);
+            background: #2b5c5b;
+            position: relative;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+        }
+        .editorial-media-card:hover {
+            transform: translate(-3px, -4px);
+            box-shadow: 9px 13px 0px rgba(0, 0, 0, 1);
+        }
+        .editorial-tarot-img {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 545 / 1024;
+            object-fit: cover;
+            display: block;
+        }
+        .editorial-tarot-svg {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 545 / 1024;
+            display: block;
+        }
+
+        .editorial-title {
+            font-family: 'Cinzel Decorative', 'Cinzel', 'Playfair Display', 'Cormorant Garamond', 'Georgia', 'Songti SC', 'STSong', 'Noto Serif SC', serif;
+            font-size: clamp(30px, 4.2vw, 42px);
+            font-weight: 700;
+            line-height: 1.35;
+            letter-spacing: 0.04em;
+            color: #0c2724;
+            margin: 0 0 28px 0;
+            border-bottom: 2px solid #2d6463;
+            padding-bottom: 16px;
+            position: relative;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.4);
+        }
+        .editorial-title::after {
+            content: '✦';
+            position: absolute;
+            right: 0;
+            bottom: -11px;
+            color: #d8b76b;
+            font-size: 16px;
+            background: #dbe7dc;
+            padding-left: 10px;
+        }
+
+        .editorial-text p {
+            font-family: 'Cormorant Garamond', 'Georgia', 'Baskerville', 'Palatino Linotype', 'Songti SC', 'STSong', 'Noto Serif SC', 'Source Han Serif SC', serif;
+            font-size: 1.28rem;
+            line-height: 2.2;
+            color: #122f2b;
+            margin: 0 0 24px 0;
+            text-align: justify;
+            text-justify: inter-ideograph;
+            letter-spacing: 0.035em;
+        }
+        .editorial-text p strong {
+            color: #051614;
+            font-weight: 700;
+            font-family: 'Cinzel', 'Cormorant Garamond', 'Georgia', 'Songti SC', 'STSong', serif;
+            letter-spacing: 0.04em;
+        }
+        .editorial-text p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 灵感参考网址纯文本附注 (不设跳转，便于阅读与复制) */
+        .editorial-references {
+            margin-top: 38px;
+            padding-top: 26px;
+            border-top: 1.5px dashed rgba(45, 100, 99, 0.38);
+        }
+        .editorial-references-title {
+            font-family: 'Cinzel', 'Georgia', 'Songti SC', serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #0f2d29;
+            letter-spacing: 0.08em;
+            margin-bottom: 16px;
+        }
+        .editorial-reference-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .editorial-reference-item {
+            width: 100%;
+        }
+        .editorial-reference-box {
+            display: flex;
+            align-items: center;
+            padding: 12px 18px;
+            background: rgba(246, 251, 247, 0.85);
+            border: 1px solid rgba(45, 100, 99, 0.28);
+            border-radius: 6px;
+            gap: 14px;
+            user-select: text;
+            -webkit-user-select: text;
+            box-shadow: 0 2px 6px rgba(22, 51, 46, 0.05);
+        }
+        .ref-tag {
+            font-family: 'Cinzel', 'Georgia', 'Songti SC', serif;
+            font-size: 0.88rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: rgba(45, 100, 99, 0.15);
+            color: #1a423d;
+            white-space: nowrap;
+            flex-shrink: 0;
+            letter-spacing: 0.03em;
+        }
+        .ref-url-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.94rem;
+            color: #122f2b;
+            word-break: break-all;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+        @media (max-width: 640px) {
+            .editorial-reference-box {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+        }
+
+        @media (max-width: 860px) {
+            .editorial-container {
+                padding: 36px 18px 60px 18px;
+            }
+            .tarot-modal-close-btn {
+                top: 16px;
+                right: 18px;
+                width: 38px;
+                height: 38px;
+            }
+            .editorial-content-split {
+                flex-direction: column-reverse;
+                gap: 28px;
+            }
+            .editorial-right {
+                width: 100%;
+                max-width: 260px;
+                margin: 0 auto;
+                position: static;
+            }
+            .editorial-media-card {
+                width: 100%;
+            }
+            .editorial-text p {
+                font-size: 1.15rem;
+                line-height: 2.05;
+            }
+        }
+
+        /* ----------------------------------------------------
+           控制条与单一主按键
+        ---------------------------------------------------- */
+        .top-controls {
+            position: absolute;
+            top: 28px;
+            right: 28px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 6px 14px;
+            border-radius: 30px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 8px 24px var(--shadow-color);
+            transition: all 0.4s ease;
+        }
+
+        .theme-toggle-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--btn-bg);
+            border: 1px solid var(--btn-border);
+            color: var(--btn-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .theme-toggle-btn:hover {
+            transform: scale(1.1);
+            background: var(--btn-hover-bg);
+            border-color: var(--btn-hover-border);
+        }
+        .theme-toggle-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            transition: transform 0.4s ease;
+        }
+
+        .brightness-slider-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--btn-color);
+        }
+        .brightness-slider-wrap svg {
+            width: 16px;
+            height: 16px;
+            opacity: 0.7;
+        }
+        .brightness-range {
+            -webkit-appearance: none;
+            width: 80px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(125, 125, 125, 0.3);
+            outline: none;
+            cursor: pointer;
+        }
+        .brightness-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--btn-color);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+        .brightness-range::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+        }
+
+        /* 主页底部唯一拇指按键 (改三合一) */
+        .bottom-nav {
+            position: absolute;
+            bottom: 36px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            pointer-events: auto;
+        }
+
+        .single-room-btn {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: var(--btn-bg);
+            border: 1px solid var(--btn-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: var(--btn-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            outline: none;
+            padding: 0;
+            transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 0 6px 20px var(--shadow-color);
+            position: relative;
+        }
+
+        .single-room-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            transition: transform 0.3s ease;
+        }
+
+        .single-room-btn:hover {
+            background: var(--btn-hover-bg);
+            border-color: var(--btn-hover-border);
+            transform: translateY(-3px) scale(1.12);
+            box-shadow: 0 10px 28px var(--btn-hover-shadow), 0 4px 16px var(--shadow-color);
+        }
+
+        .single-room-btn:active {
+            transform: translateY(0) scale(0.96);
+        }
+
+        /* 返回主页 / 返回房间按键 */
+        .home-btn {
+            position: absolute;
+            top: 28px;
+            left: 28px;
+            z-index: 10;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--btn-bg);
+            border: 1px solid var(--btn-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: var(--btn-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.9);
+            box-shadow: 0 4px 16px var(--shadow-color);
+        }
+
+        .home-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+
+        .home-btn:hover {
+            background: var(--btn-hover-bg);
+            border-color: var(--btn-hover-border);
+            transform: scale(1.08);
+        }
+        .home-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+    </style>
+    <!-- 引入 Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="webgl-container"></div>
+    <canvas id="projection-canvas"></canvas>
+    <div class="scanlines"></div>
+
+    <aside class="top-controls">
+        <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Theme">
+            <svg id="themeIconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg id="themeIconMoon" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </button>
+
+        <div class="brightness-slider-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+            </svg>
+            <input type="range" id="brightnessRange" class="brightness-range" min="0.5" max="1.6" step="0.05" value="1.0">
+        </div>
+    </aside>
+
+    <!-- 返回按键 (返回主页或返回房间) -->
+    <button class="home-btn" id="homeBtn" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+    </button>
+
+    <div class="pages-viewport">
+        <!-- 页面 0: 主页 (交互波纹 + 钻石投影立方体) -->
+        <section class="page-view active" id="page-home">
+            <div class="page-content-slot">
+                <div class="home-text-container">
+                    <div>
+                        <span>一</span><span>隅</span><span>数</span><span>字</span><span>方</span><span>寸</span><span>，</span>
+                    </div>
+                    <div>
+                        <span>幸</span><span>得</span><span>你</span><span>的</span><span>驻</span><span>足</span><span>。</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+                <!-- 页面 1: 3D 全息粒子地球与数据脉冲系统 (参考用户指定风格，无多余文字) -->
+        <section class="page-view" id="page-room">
+            <div class="space-earth-viewport" id="spaceEarthViewport">
+                <!-- Three.js 专属全息粒子地球 Canvas -->
+                <canvas id="earth-canvas"></canvas>
+
+                <!-- 围绕地球旋转的 3D 投影浮空纯图标节点 (纯净圆环图标，无文字标签，悬停提示，点击可跳转) -->
+                <div class="orbit-nodes-layer" id="orbitNodesLayer">
+                    <!-- 1. 自我介绍 (Identity Profile) -->
+                    <div class="orbit-badge-card" id="node-badge-0" data-index="0" data-tooltip="自我介绍" aria-label="自我介绍" title="自我介绍 (点击跳转)">
+                        <div class="orbit-badge-icon-wrap">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- 2. 与编程的相遇 (Code & Terminal) -->
+                    <div class="orbit-badge-card" id="node-badge-1" data-index="1" data-tooltip="与编程的相遇" aria-label="与编程的相遇" title="与编程的相遇 (点击跳转)">
+                        <div class="orbit-badge-icon-wrap">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="16 18 22 12 16 6"/>
+                                <polyline points="8 6 2 12 8 18"/>
+                                <line x1="14" y1="4" x2="10" y2="20"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- 3. 嵌入式与无人机自控 (Quadcopter Drone & Flight Autopilot) -->
+                    <div class="orbit-badge-card" id="node-badge-2" data-index="2" data-tooltip="嵌入式与无人机自控" aria-label="嵌入式与无人机自控" title="嵌入式与无人机自控 (点击跳转)">
+                        <div class="orbit-badge-icon-wrap">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="2.8"/>
+                                <line x1="7" y1="7" x2="10.2" y2="10.2"/>
+                                <line x1="17" y1="7" x2="13.8" y2="10.2"/>
+                                <line x1="7" y1="17" x2="10.2" y2="13.8"/>
+                                <line x1="17" y1="17" x2="13.8" y2="13.8"/>
+                                <circle cx="6" cy="6" r="1.6"/>
+                                <line x1="3" y1="6" x2="9" y2="6"/>
+                                <circle cx="18" cy="6" r="1.6"/>
+                                <line x1="15" y1="6" x2="21" y2="6"/>
+                                <circle cx="6" cy="18" r="1.6"/>
+                                <line x1="3" y1="18" x2="9" y2="18"/>
+                                <circle cx="18" cy="18" r="1.6"/>
+                                <line x1="15" y1="18" x2="21" y2="18"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- 4. 从想法到落地 (From Idea to Reality) -->
+                    <div class="orbit-badge-card" id="node-badge-3" data-index="3" data-tooltip="从想法到落地" aria-label="从想法到落地" title="从想法到落地 (点击跳转)">
+                        <div class="orbit-badge-icon-wrap">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 18h6"/>
+                                <path d="M10 22h4"/>
+                                <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 典藏淡绿塔罗风格档案展陈 (图文并茂经典画廊版式) -->
+                <div class="space-modal-stage" id="spaceModalStage" aria-hidden="true">
+                    <!-- 古典淡绿塔罗动态背景画布 (慢速自转浑天星盘与古典星尘) -->
+                    <canvas id="tarotBgCanvas"></canvas>
+
+                    <!-- 全屏像素方块浮动重组动效画布 -->
+                    <canvas id="pixelAssemblyCanvas"></canvas>
+
+                    <!-- 悬浮古典塔罗关闭按键 (无上方白色多余板块) -->
+                    <button class="tarot-modal-close-btn" id="spaceModalCloseBtn" aria-label="关闭返回地球" title="关闭返回地球">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+
+                    <div class="editorial-container" id="editorialContainer">
+                        <!-- 主流编辑档案列表 (图文并茂经典画廊版式，单板块专属展示) -->
+                        <main class="editorial-dossier-list">
+                            <!-- 档案 1: 自我介绍 -->
+                            <article class="editorial-item active" id="dossier-item-0">
+                                <div class="editorial-content-split">
+                                    <div class="editorial-left">
+                                        <h1 class="editorial-title">陶玉书 · 自我介绍</h1>
+                                        <div class="editorial-text">
+                                            <p><strong>陶玉书</strong> · 计智学院人工智能 3 班新生。热爱编程、算法与智能硬件，热切向往加入双足机器人实验室。</p>
+                                            <p>我是陶玉书，是计智学院人工智能 3 班新生。我热爱编程，年少时曾接触相关知识，后因一些缘由中断学习。步入大学，我选择人工智能专业，得以重拾这份热爱，内心十分欣喜。代码里的逻辑推演与无限可能，始终是我探索世界的窗口。</p>
+                                            <p>作为一名初学者，我自知基础尚有欠缺。双足机器人融合代码算法与硬件机体结构，是我十分向往的研究方向。无论是步态平衡算法还是机电传感控制，我都愿意沉下心补齐知识短板，踏实钻研，在理论与模型之间夯实根基。</p>
+                                            <p>若有幸加入实验室，我会认真完成分配的任务，积极配合团队协作，将编程知识运用于项目实践。期待能在实验室跟随各位前辈一同探索，在实操中积累宝贵经验，不断反思与提升自我，为团队贡献扎实力量。</p>
+                                        </div>
+                                    </div>
+                                    <div class="editorial-right">
+                                        <div class="editorial-media-card" title="双足机械探索者与星辰书卷 · 陶玉书">
+                                            <svg viewBox="0 0 545 1024" class="editorial-tarot-svg" xmlns="http://www.w3.org/2000/svg">
+                                                <defs>
+                                                    <pattern id="linenGrid0" width="8" height="8" patternUnits="userSpaceOnUse">
+                                                        <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(255,255,255,0.04)" stroke-width="1.2"/>
+                                                        <line x1="4" y1="0" x2="4" y2="8" stroke="rgba(0,0,0,0.05)" stroke-width="1.2"/>
+                                                    </pattern>
+                                                    <filter id="glowGold0" x="-20%" y="-20%" width="140%" height="140%">
+                                                        <feGaussianBlur stdDeviation="3" result="blur"/>
+                                                        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                                                    </filter>
+                                                    <linearGradient id="goldGrad0" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                        <stop offset="0%" stop-color="#fff2c2"/>
+                                                        <stop offset="50%" stop-color="#d8b76b"/>
+                                                        <stop offset="100%" stop-color="#9a7732"/>
+                                                    </linearGradient>
+                                                </defs>
+                                                <!-- 复古绿底与布纹材质 -->
+                                                <rect width="545" height="1024" fill="#2d6463"/>
+                                                <rect width="545" height="1024" fill="url(#linenGrid0)"/>
+                                                <!-- 内层暗调椭圆光晕 -->
+                                                <ellipse cx="272" cy="512" rx="200" ry="340" fill="#204544" stroke="#2c5b59" stroke-width="2"/>
+                                                <!-- 金色双线边框与圆珠串饰 -->
+                                                <rect x="22" y="22" width="501" height="980" fill="none" stroke="#d8b76b" stroke-width="1.6"/>
+                                                <rect x="34" y="34" width="477" height="956" fill="none" stroke="#d8b76b" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="0 14"/>
+                                                <rect x="46" y="46" width="453" height="932" fill="none" stroke="#d8b76b" stroke-width="1.2"/>
+                                                <!-- 左右古典金环挂耳 -->
+                                                <circle cx="26" cy="512" r="13" fill="#2a1215" stroke="#d8b76b" stroke-width="2"/>
+                                                <circle cx="519" cy="512" r="13" fill="#2a1215" stroke="#d8b76b" stroke-width="2"/>
+                                                <circle cx="26" cy="512" r="4.5" fill="#d8b76b"/>
+                                                <circle cx="519" cy="512" r="4.5" fill="#d8b76b"/>
+                                                <!-- 四角古典纹花 -->
+                                                <circle cx="46" cy="46" r="6" fill="none" stroke="#d8b76b" stroke-width="1.5"/>
+                                                <circle cx="499" cy="46" r="6" fill="none" stroke="#d8b76b" stroke-width="1.5"/>
+                                                <circle cx="46" cy="978" r="6" fill="none" stroke="#d8b76b" stroke-width="1.5"/>
+                                                <circle cx="499" cy="978" r="6" fill="none" stroke="#d8b76b" stroke-width="1.5"/>
+
+                                                <!-- 核心插画: 达芬奇式双足机器人、典籍玉书与北极星辰 -->
+                                                <!-- 垂直神圣光芒与代码星流水幕 -->
+                                                <g stroke="#ffffff" opacity="0.82" stroke-dasharray="2 7">
+                                                    <line x1="220" y1="330" x2="220" y2="730" stroke-width="1.5"/>
+                                                    <line x1="244" y1="310" x2="244" y2="760" stroke-width="1.8"/>
+                                                    <line x1="272" y1="290" x2="272" y2="780" stroke-width="2.2" stroke="#e8fffb"/>
+                                                    <line x1="300" y1="310" x2="300" y2="760" stroke-width="1.8"/>
+                                                    <line x1="324" y1="330" x2="324" y2="730" stroke-width="1.5"/>
+                                                </g>
+
+                                                <!-- 顶部星辰与浑天环饰 -->
+                                                <g transform="translate(272, 330)">
+                                                    <circle cx="0" cy="0" r="46" fill="none" stroke="#d8b76b" stroke-width="1.8" filter="url(#glowGold0)"/>
+                                                    <circle cx="0" cy="0" r="38" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="4 3" opacity="0.85"/>
+                                                    <circle cx="0" cy="0" r="12" fill="#d8b76b" opacity="0.9"/>
+                                                    <circle cx="0" cy="0" r="4.5" fill="#ffffff"/>
+                                                    <!-- 放射状八芒星 -->
+                                                    <path d="M0 -28 L4 -8 L24 0 L4 8 L0 28 L-4 8 L-24 0 L-4 -8 Z" fill="#fff5cc" opacity="0.9"/>
+                                                </g>
+
+                                                <!-- 达芬奇式双足机器人躯体与关节骨架 (Bipedal Automaton) -->
+                                                <g id="bipedalRobotGraphic" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
+                                                    <!-- 头部/传感器目镜 -->
+                                                    <circle cx="272" cy="406" r="14" fill="#204544" stroke="#d8b76b" stroke-width="2"/>
+                                                    <circle cx="272" cy="406" r="6" fill="#e8fffb" stroke="none"/>
+                                                    <line x1="272" y1="392" x2="272" y2="384" stroke="#d8b76b" stroke-width="2"/>
+                                                    <circle cx="272" cy="382" r="3" fill="#d8b76b"/>
+
+                                                    <!-- 颈部与胸甲架构 (躯干齿轮罗盘核心) -->
+                                                    <path d="M256 422 L288 422 L294 456 L272 470 L250 456 Z" fill="rgba(216,183,107,0.18)" stroke="#d8b76b" stroke-width="2"/>
+                                                    <!-- 胸口能量核心与齿轮 -->
+                                                    <circle cx="272" cy="442" r="10" fill="#204544" stroke="#ffffff" stroke-width="1.5"/>
+                                                    <circle cx="272" cy="442" r="4" fill="#d8b76b"/>
+                                                    <line x1="262" y1="442" x2="282" y2="442" stroke="#ffffff" stroke-width="1"/>
+                                                    <line x1="272" y1="432" x2="272" y2="452" stroke="#ffffff" stroke-width="1"/>
+
+                                                    <!-- 双肩与手臂连杆 (左臂托举典籍，右臂指向前方) -->
+                                                    <circle cx="248" cy="424" r="5" fill="#d8b76b"/>
+                                                    <circle cx="296" cy="424" r="5" fill="#d8b76b"/>
+                                                    <!-- 左上臂与前臂 -->
+                                                    <line x1="248" y1="424" x2="230" y2="448" stroke="#ffffff" stroke-width="2.5"/>
+                                                    <circle cx="230" cy="448" r="4" fill="#d8b76b"/>
+                                                    <line x1="230" y1="448" x2="242" y2="476" stroke="#ffffff" stroke-width="2.2"/>
+                                                    <circle cx="242" cy="476" r="3.5" fill="#d8b76b"/>
+                                                    <!-- 右上臂与前臂 (舒展探索姿态) -->
+                                                    <line x1="296" y1="424" x2="318" y2="450" stroke="#ffffff" stroke-width="2.5"/>
+                                                    <circle cx="318" cy="450" r="4" fill="#d8b76b"/>
+                                                    <line x1="318" y1="450" x2="332" y2="478" stroke="#ffffff" stroke-width="2.2"/>
+                                                    <circle cx="332" cy="478" r="3.5" fill="#d8b76b"/>
+
+                                                    <!-- 骨盆腰节轴承 -->
+                                                    <ellipse cx="272" cy="475" rx="16" ry="6" fill="#204544" stroke="#d8b76b" stroke-width="2"/>
+                                                    
+                                                    <!-- 双足行走下肢结构 (Bipedal Walkers) -->
+                                                    <!-- 左腿 (支撑相 Stance phase) -->
+                                                    <circle cx="260" cy="482" r="4.5" fill="#d8b76b"/>
+                                                    <line x1="260" y1="482" x2="252" y2="528" stroke="#ffffff" stroke-width="3"/>
+                                                    <!-- 左膝铰链关节 -->
+                                                    <circle cx="252" cy="528" r="5.5" fill="#204544" stroke="#d8b76b" stroke-width="2"/>
+                                                    <line x1="252" y1="528" x2="250" y2="574" stroke="#ffffff" stroke-width="2.8"/>
+                                                    <!-- 左脚踝与足底支撑板 -->
+                                                    <circle cx="250" cy="574" r="4" fill="#d8b76b"/>
+                                                    <polygon points="238,582 262,582 258,576 244,576" fill="#d8b76b" stroke="#ffffff" stroke-width="1.2"/>
+
+                                                    <!-- 右腿 (迈步前摆相 Swing phase) -->
+                                                    <circle cx="284" cy="482" r="4.5" fill="#d8b76b"/>
+                                                    <line x1="284" y1="482" x2="298" y2="522" stroke="#ffffff" stroke-width="3"/>
+                                                    <!-- 右膝铰链关节 -->
+                                                    <circle cx="298" cy="522" r="5.5" fill="#204544" stroke="#d8b76b" stroke-width="2"/>
+                                                    <line x1="298" y1="522" x2="292" y2="568" stroke="#ffffff" stroke-width="2.8"/>
+                                                    <!-- 右脚踝与足底板 (凌空微跃) -->
+                                                    <circle cx="292" cy="568" r="4" fill="#d8b76b"/>
+                                                    <polygon points="282,574 306,570 302,565 286,568" fill="#d8b76b" stroke="#ffffff" stroke-width="1.2"/>
+                                                </g>
+
+                                                <!-- 基座: 古典天文台阶与齿轮平台 (Pedestal & Gear Base) -->
+                                                <g transform="translate(272, 600)">
+                                                    <ellipse cx="0" cy="0" rx="90" ry="16" fill="#204544" stroke="#d8b76b" stroke-width="2.2"/>
+                                                    <ellipse cx="0" cy="0" rx="72" ry="12" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="6 3"/>
+                                                    <ellipse cx="0" cy="12" rx="108" ry="18" fill="#1b3e3c" stroke="#d8b76b" stroke-width="1.6"/>
+                                                    <ellipse cx="0" cy="24" rx="126" ry="20" fill="#15302f" stroke="#d8b76b" stroke-width="1.2"/>
+                                                </g>
+
+                                                <!-- 典籍画卷「玉书」浮空光辉 (The Luminous Tome / Jade Codex) -->
+                                                <g transform="translate(272, 665)">
+                                                    <!-- 典籍金色光晕 -->
+                                                    <ellipse cx="0" cy="2" rx="78" ry="26" fill="rgba(216,183,107,0.2)" filter="url(#glowGold0)"/>
+                                                    <!-- 展开的书卷页片 (双曲弧线古典羊皮纸/玉书) -->
+                                                    <path d="M0 8 C-25 -2 -50 -4 -68 8 C-70 -16 -46 -24 0 -18 C46 -24 70 -16 68 8 C50 -4 25 -2 0 8 Z" fill="#fffdf5" stroke="#d8b76b" stroke-width="2"/>
+                                                    <!-- 内层书页微影 -->
+                                                    <path d="M0 6 C-22 -3 -44 -4 -62 6 C-64 -14 -42 -20 0 -15 C42 -20 64 -14 62 6 C44 -4 22 -3 0 6 Z" fill="#f4ebd0" opacity="0.9"/>
+                                                    <!-- 书脊中缝 -->
+                                                    <line x1="0" y1="-18" x2="0" y2="8" stroke="#9a7732" stroke-width="2"/>
+                                                    <!-- 典籍中的金色字符与代码微符 (玉书灵光) -->
+                                                    <g stroke="#9a7732" stroke-width="1.2" opacity="0.75">
+                                                        <line x1="-52" y1="-8" x2="-14" y2="-8"/>
+                                                        <line x1="-50" y1="-2" x2="-16" y2="-2"/>
+                                                        <line x1="-48" y1="4" x2="-18" y2="4"/>
+                                                        <line x1="14" y1="-8" x2="52" y2="-8"/>
+                                                        <line x1="16" y1="-2" x2="50" y2="-2"/>
+                                                        <line x1="18" y1="4" x2="48" y2="4"/>
+                                                    </g>
+                                                    <!-- 玉书上方飘浮的金色微光符文 -->
+                                                    <circle cx="0" cy="-32" r="3.5" fill="#fff2c2" filter="url(#glowGold0)"/>
+                                                    <line x1="-10" y1="-32" x2="10" y2="-32" stroke="#d8b76b" stroke-width="1"/>
+                                                    <line x1="0" y1="-42" x2="0" y2="-22" stroke="#d8b76b" stroke-width="1"/>
+                                                </g>
+
+                                                <!-- 顶端立羽白鸽 (衔金环，与全套卡牌呼应) -->
+                                                <circle cx="272" cy="275" r="11" fill="none" stroke="#d8b76b" stroke-width="2"/>
+                                                <g transform="translate(236, 175) scale(0.68)">
+                                                    <path d="M50 15 C35 25 25 45 28 65 C32 80 48 95 62 102 C56 82 62 65 74 48 C85 34 80 18 50 15 Z" fill="#ffffff"/>
+                                                    <path d="M50 15 C60 25 72 35 78 50 C65 52 50 40 45 28 Z" fill="#ffffff" opacity="0.9"/>
+                                                    <circle cx="68" cy="28" r="2.2" fill="#2d6463"/>
+                                                </g>
+
+                                                <!-- 侧翼飞舞白鸽 (象征重拾编程热忱与理想启航) -->
+                                                <g transform="translate(380, 430) scale(0.55)">
+                                                    <path d="M10 50 C30 20 60 10 90 20 C70 40 50 60 40 80 C30 75 20 65 10 50 Z" fill="#ffffff"/>
+                                                    <path d="M40 80 C60 70 85 75 100 85 C80 90 60 92 45 88 Z" fill="#ffffff" opacity="0.9"/>
+                                                    <circle cx="25" cy="40" r="2" fill="#2d6463"/>
+                                                </g>
+
+                                                <!-- 底部对栖两只守护白鸽 (与整体卡牌构图统一) -->
+                                                <g transform="translate(100, 720) scale(0.62)">
+                                                    <path d="M50 15 C35 25 25 45 28 65 C32 80 48 95 62 102 C56 82 62 65 74 48 C85 34 80 18 50 15 Z" fill="#ffffff"/>
+                                                    <circle cx="68" cy="28" r="2.2" fill="#2d6463"/>
+                                                </g>
+                                                <g transform="translate(370, 725) scale(-0.62, 0.62)">
+                                                    <path d="M50 15 C35 25 25 45 28 65 C32 80 48 95 62 102 C56 82 62 65 74 48 C85 34 80 18 50 15 Z" fill="#ffffff"/>
+                                                    <circle cx="68" cy="28" r="2.2" fill="#2d6463"/>
+                                                </g>
+
+                                                <!-- 飘散轻盈白羽 -->
+                                                <path d="M260 85 C276 100 273 125 256 135 C259 120 253 100 260 85 Z" fill="#ffffff" opacity="0.88"/>
+                                                <path d="M150 390 C170 405 165 430 145 442 C149 425 143 405 150 390 Z" fill="#ffffff" opacity="0.9"/>
+                                                <path d="M390 350 C408 365 402 388 385 400 C388 385 382 365 390 350 Z" fill="#ffffff" opacity="0.8"/>
+                                                <path d="M272 820 C292 832 287 855 267 865 C272 850 266 835 272 820 Z" fill="#ffffff" opacity="0.88"/>
+
+                                                <!-- 古典书法标识 (Tao Yushu) -->
+                                                <text x="68" y="240" font-family="'Brush Script MT', cursive, serif" font-size="28" fill="#d86e85" opacity="0.85">Yushu</text>
+                                                <text x="375" y="820" font-family="'Brush Script MT', cursive, serif" font-size="28" fill="#d86e85" opacity="0.85">Automaton</text>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- 档案 2: 与编程的相遇 -->
+                            <article class="editorial-item" id="dossier-item-1">
+                                <div class="editorial-content-split">
+                                    <div class="editorial-left">
+                                        <h1 class="editorial-title">与编程的相遇</h1>
+                                        <div class="editorial-text">
+                                            <p><strong>启蒙与热爱</strong> · 从黄色小猫 Scratch 到严密沉稳的 C++，再到实体小车与手柄的驱动体验。</p>
+                                            <p>我对编程与机器人领域的兴趣，最早源于父亲的启发。我接触编程的起点是Scratch，这款黄色小猫的图形化编程工具。只需要像搭积木一般拖拽模块，就能一步步写出逻辑，做出动画或是简易小游戏。每完成一个作品带来的成就感，在我心里埋下了热爱编程的种子，也让我愿意继续探索更深的技术。</p>
+                                            <p>在熟悉Scratch之后，我开始接触C++。和可视化的图形编程不同，C++更加抽象，需要严谨的逻辑推演，学习过程也更考验耐心，相比之下更为枯燥烧脑，但也让我体会到代码底层逻辑的魅力。小学阶段，在父亲的指导与帮助下，我动手搭建、制作过可以自主控制的小车，还有自制手柄等硬件作品。这段经历，让我第一次把代码和实体硬件结合起来，直观感受到程序能够驱动实体设备运行，也让我对机器人、自动控制方向产生了浓厚的好奇。</p>
+                                            <p>高考填报志愿时，出于对这个方向的热爱，我选择了人工智能专业，有幸进入本校学习。军训期间的社团宣讲活动，让我了解到双足实验室。双足机器人的研究方向深深吸引了我，我十分希望能够抓住这次机会，加入实验室继续学习实践。</p>
+                                            <p>目前我在网页制作方面属于零基础，本次提交的网页作品，是借助AI辅助完成代码实现，但整体的设计思路、页面审美与内容构思都是由我自己确定的。我清楚自己还有很多知识需要学习，也愿意投入时间踏实钻研，期待能在实验室中和大家一同成长。</p>
+                                        </div>
+                                    </div>
+                                    <div class="editorial-right">
+                                        <div class="editorial-media-card" title="浑天星盘与代码矩阵 · 与编程的相遇">
+                                            <svg viewBox="0 0 545 1024" class="editorial-tarot-svg" xmlns="http://www.w3.org/2000/svg">
+                                                <defs>
+                                                    <pattern id="linenGrid1" width="8" height="8" patternUnits="userSpaceOnUse">
+                                                        <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(255,255,255,0.04)" stroke-width="1.2"/>
+                                                        <line x1="4" y1="0" x2="4" y2="8" stroke="rgba(0,0,0,0.05)" stroke-width="1.2"/>
+                                                    </pattern>
+                                                    <filter id="glowGold1" x="-20%" y="-20%" width="140%" height="140%">
+                                                        <feGaussianBlur stdDeviation="3" result="blur"/>
+                                                        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                                                    </filter>
+                                                </defs>
+                                                <!-- 复古绿底与布纹材质 -->
+                                                <rect width="545" height="1024" fill="#2d6463"/>
+                                                <rect width="545" height="1024" fill="url(#linenGrid1)"/>
+                                                <!-- 内层暗调椭圆光晕 -->
+                                                <ellipse cx="272" cy="512" rx="200" ry="340" fill="#204544" stroke="#2c5b59" stroke-width="2"/>
+                                                <!-- 金色双线边框与圆珠串饰 -->
+                                                <rect x="22" y="22" width="501" height="980" fill="none" stroke="#d8b76b" stroke-width="1.6"/>
+                                                <rect x="34" y="34" width="477" height="956" fill="none" stroke="#d8b76b" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="0 14"/>
+                                                <rect x="46" y="46" width="453" height="932" fill="none" stroke="#d8b76b" stroke-width="1.2"/>
+                                                <!-- 左右古典金环挂耳 -->
+                                                <circle cx="26" cy="512" r="13" fill="#2a1215" stroke="#d8b76b" stroke-width="2"/>
+                                                <circle cx="519" cy="512" r="13" fill="#2a1215" stroke="#d8b76b" stroke-width="2"/>
+                                                <circle cx="26" cy="512" r="4.5" fill="#d8b76b"/>
+                                                <circle cx="519" cy="512" r="4.5" fill="#d8b76b"/>
+                                                <!-- 四角古典纹花 -->
+                                                <circle cx="46" cy="46" r="6" fill="none" stroke="#d8b76b" stroke-width="1.5"/>
+                                                <circle cx="499" cy="46" r="6" fill="none" stroke="#d8b76b" stroke-width="1.5"/>
+                                                <circle cx="46" cy="978" r="6" fill="none" stroke="#d8b76b" stroke-width="1.5"/>
+                                                <circle cx="499" cy="978" r="6" fill="none" stroke="#d8b76b" stroke-width="1.5"/>
+                                                
+                                                <!-- 核心插画: 古典星盘浑天仪与代码逻辑瀑布 -->
+                                                <!-- 向上与向下流淌的代码水幕微光 -->
+                                                <g stroke="#ffffff" opacity="0.85" stroke-dasharray="2 6">
+                                                    <line x1="225" y1="360" x2="225" y2="700" stroke-width="1.5"/>
+                                                    <line x1="240" y1="340" x2="240" y2="730" stroke-width="1.8"/>
+                                                    <line x1="255" y1="330" x2="255" y2="745" stroke-width="2"/>
+                                                    <line x1="272" y1="320" x2="272" y2="760" stroke-width="2.2" stroke="#e8fffb"/>
+                                                    <line x1="290" y1="330" x2="290" y2="745" stroke-width="2"/>
+                                                    <line x1="305" y1="340" x2="305" y2="730" stroke-width="1.8"/>
+                                                    <line x1="320" y1="360" x2="320" y2="700" stroke-width="1.5"/>
+                                                </g>
+                                                <!-- 星盘同心环 -->
+                                                <ellipse cx="272" cy="520" rx="140" ry="140" fill="none" stroke="#d8b76b" stroke-width="2.5" filter="url(#glowGold1)"/>
+                                                <ellipse cx="272" cy="520" rx="140" ry="50" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.8"/>
+                                                <ellipse cx="272" cy="520" rx="60" ry="140" fill="none" stroke="#d8b76b" stroke-width="1.5" stroke-dasharray="4 4"/>
+                                                <circle cx="272" cy="520" r="85" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-dasharray="6 3"/>
+                                                <circle cx="272" cy="520" r="18" fill="#d8b76b" opacity="0.9"/>
+                                                <circle cx="272" cy="520" r="6" fill="#ffffff"/>
+                                                <!-- 代码点阵与星星坐标 -->
+                                                <circle cx="210" cy="460" r="3" fill="#ffffff"/>
+                                                <circle cx="334" cy="460" r="3" fill="#ffffff"/>
+                                                <circle cx="240" cy="580" r="2.5" fill="#ffffff"/>
+                                                <circle cx="304" cy="580" r="2.5" fill="#ffffff"/>
+                                                
+                                                <!-- 顶端立羽白鸽 (衔金环) -->
+                                                <circle cx="272" cy="275" r="11" fill="none" stroke="#d8b76b" stroke-width="2"/>
+                                                <g transform="translate(236, 175) scale(0.68)">
+                                                    <path d="M50 15 C35 25 25 45 28 65 C32 80 48 95 62 102 C56 82 62 65 74 48 C85 34 80 18 50 15 Z" fill="#ffffff"/>
+                                                    <path d="M50 15 C60 25 72 35 78 50 C65 52 50 40 45 28 Z" fill="#ffffff" opacity="0.9"/>
+                                                    <circle cx="68" cy="28" r="2.2" fill="#2d6463"/>
+                                                </g>
+                                                <!-- 右侧展翅飞翔的白鸽 -->
+                                                <g transform="translate(390, 480) scale(0.55)">
+                                                    <path d="M10 50 C30 20 60 10 90 20 C70 40 50 60 40 80 C30 75 20 65 10 50 Z" fill="#ffffff"/>
+                                                    <path d="M40 80 C60 70 85 75 100 85 C80 90 60 92 45 88 Z" fill="#ffffff" opacity="0.9"/>
+                                                    <circle cx="25" cy="40" r="2" fill="#2d6463"/>
+                                                </g>
+                                                <!-- 底部对栖两只白鸽 -->
+                                                <g transform="translate(100, 710) scale(0.62)">
+                                                    <path d="M50 15 C35 25 25 45 28 65 C32 80 48 95 62 102 C56 82 62 65 74 48 C85 34 80 18 50 15 Z" fill="#ffffff"/>
+                                                    <circle cx="68" cy="28" r="2.2" fill="#2d6463"/>
+                                                </g>
+                                                <g transform="translate(370, 715) scale(-0.62, 0.62)">
+                                                    <path d="M50 15 C35 25 25 45 28 65 C32 80 48 95 62 102 C56 82 62 65 74 48 C85 34 80 18 50 15 Z" fill="#ffffff"/>
+                                                    <circle cx="68" cy="28" r="2.2" fill="#2d6463"/>
+                                                </g>
+                                                
+                                                <!-- 飘散轻盈白羽 -->
+                                                <path d="M260 80 C275 95 272 120 255 130 C258 115 252 95 260 80 Z" fill="#ffffff" opacity="0.85"/>
+                                                <path d="M165 420 C185 435 180 460 160 472 C164 455 158 435 165 420 Z" fill="#ffffff" opacity="0.9"/>
+                                                <path d="M380 340 C398 355 392 378 375 390 C378 375 372 355 380 340 Z" fill="#ffffff" opacity="0.8"/>
+                                                <path d="M280 830 C300 842 295 865 275 875 C280 860 274 845 280 830 Z" fill="#ffffff" opacity="0.88"/>
+                                                <!-- 古典粉红手写印信 -->
+                                                <text x="70" y="240" font-family="'Brush Script MT', cursive, serif" font-size="28" fill="#d86e85" opacity="0.85">Oyasumi</text>
+                                                <text x="390" y="820" font-family="'Brush Script MT', cursive, serif" font-size="28" fill="#d86e85" opacity="0.85">Oyasumi</text>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- 档案 3: 嵌入式与无人机自控 -->
+                            <article class="editorial-item" id="dossier-item-2">
+                                <div class="editorial-content-split">
+                                    <div class="editorial-left">
+                                        <h1 class="editorial-title">嵌入式与无人机自控</h1>
+                                        <div class="editorial-text">
+                                            <p><strong>软硬件交融</strong> · 渴望在传感器融合、姿态解算与运动控制底层不断钻研实操。</p>
+                                            <p>我一直对嵌入式与自动控制领域抱有浓厚兴趣，尤其向往无人机方向。无人机融合了传感器感知、运动控制、底层代码开发等多项技术，能够依靠算法实现设备自主运动，这正是我希望深入钻研的内容。</p>
+                                            <p>我清楚自己目前相关的专业基础尚浅，但拥有较强的学习热情与动手意愿，愿意投入课余时间踏实补全知识，积极参与项目实践。希望能够获得加入实验室的机会，跟随学长学习，参与无人机相关的课题，在实践中不断打磨编程与硬件实操能力。</p>
+                                        </div>
+                                    </div>
+                                    <div class="editorial-right">
+                                        <div class="editorial-media-card" title="达芬奇飞翼与自控无人机 · 嵌入式与无人机自控">
+                                            <svg viewBox="0 0 545 1024" class="editorial-tarot-svg" xmlns="http://www.w3.org/2000/svg">
+                                                <defs>
+                                                    <pattern id="linenGrid2" width="8" height="8" patternUnits="userSpaceOnUse">
+                                                        <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(255,255,255,0.04)" stroke-width="1.2"/>
+                                                        <line x1="4" y1="0" x2="4" y2="8" stroke="rgba(0,0,0,0.05)" stroke-width="1.2"/>
+                                                    </pattern>
+                                                    <filter id="glowGold2" x="-20%" y="-20%" width="140%" height="140%">
+                                                        <feGaussianBlur stdDeviation="3" result="blur"/>
+                                                        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                                                    </filter>
+                                                </defs>
+                                                <!-- 复古绿底与布纹材质 -->
+                                                <rect width="545" height="1024" fill="#2d6463"/>
+                                                <rect width="545" height="1024" fill="url(#linenGrid2)"/>
+                                                <!-- 内层暗调椭圆光晕 -->
+                                                <ellipse cx="272" cy="512" rx="200" ry="340" fill="#204544" stroke="#2c5b59" stroke-width="2"/>
+                                                <!-- 金色双线边框与圆珠串饰 -->
+                                                <rect x="22" y="22" width="501" height="980" fill="none" stroke="#d8b76b" stroke-width="1.6"/>
+                                                <rect x="34" y="34" width="477" height="956" fill="none" stroke="#d8b76b" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="0 14"/>
+                                                <rect x="46" y="46" width="453" height="932" fill="none" stroke="#d8b76b" stroke-width="1.2"/>
+                                                <!-- 左右古典金环挂耳 -->
+                                                <circle cx="26" cy="512" r="13" fill="#2a1215" stroke="#d8b76b" stroke-width="2"/>
+                                                <circle cx="519" cy="512" r="13" fill="#2a1215" stroke="#d8b76b" stroke-width="2"/>
+                                                <circle cx="26" cy="512" r="4.5" fill="#d8b76b"/>
+                                                <circle cx="519" cy="512" r="4.5" fill="#d8b76b"/>
+                                                
+                                                <!-- 核心插画: 达芬奇式机械飞翼与自控四轴旋翼图腾 -->
+                                                <!-- 陀螺仪与气流光束水幕 -->
+                                                <g stroke="#ffffff" opacity="0.8" stroke-dasharray="2 7">
+                                                    <line x1="230" y1="360" x2="230" y2="720" stroke-width="1.6"/>
+                                                    <line x1="250" y1="330" x2="250" y2="750" stroke-width="1.8"/>
+                                                    <line x1="272" y1="310" x2="272" y2="770" stroke-width="2.2" stroke="#e8fffb"/>
+                                                    <line x1="294" y1="330" x2="294" y2="750" stroke-width="1.8"/>
+                                                    <line x1="314" y1="360" x2="314" y2="720" stroke-width="1.6"/>
+                                                </g>
+                                                <!-- 四轴飞控 X 架构骨架 -->
+                                                <line x1="160" y1="410" x2="384" y2="614" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+                                                <line x1="384" y1="410" x2="160" y2="614" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+                                                <line x1="160" y1="410" x2="384" y2="614" stroke="#d8b76b" stroke-width="1.5"/>
+                                                <line x1="384" y1="410" x2="160" y2="614" stroke="#d8b76b" stroke-width="1.5"/>
+                                                <!-- 四个旋翼同心光环 -->
+                                                <ellipse cx="160" cy="410" rx="48" ry="18" fill="rgba(216,183,107,0.15)" stroke="#ffffff" stroke-width="1.8"/>
+                                                <ellipse cx="384" cy="410" rx="48" ry="18" fill="rgba(216,183,107,0.15)" stroke="#ffffff" stroke-width="1.8"/>
+                                                <ellipse cx="160" cy="614" rx="48" ry="18" fill="rgba(216,183,107,0.15)" stroke="#ffffff" stroke-width="1.8"/>
+                                                <ellipse cx="384" cy="614" rx="48" ry="18" fill="rgba(216,183,107,0.15)" stroke="#ffffff" stroke-width="1.8"/>
+                                                <!-- 中心自控飞行大脑与金质航向罗盘 -->
+                                                <circle cx="272" cy="512" r="42" fill="#204544" stroke="#d8b76b" stroke-width="2.5" filter="url(#glowGold2)"/>
+                                                <circle cx="272" cy="512" r="32" fill="none" stroke="#ffffff" stroke-width="1.4" stroke-dasharray="4 2"/>
+                                                <circle cx="272" cy="512" r="10" fill="#d8b76b"/>
+                                                <circle cx="272" cy="512" r="4" fill="#ffffff"/>
+                                                <!-- 达芬奇式机械飞羽展开 -->
+                                                <path d="M160 410 C100 380 70 420 50 460 C90 450 130 430 160 410 Z" fill="#ffffff" opacity="0.85"/>
+                                                <path d="M384 410 C444 380 474 420 494 460 C454 450 414 430 384 410 Z" fill="#ffffff" opacity="0.85"/>
+                                                
+                                                <!-- 顶端守望白鸽 (衔金环) -->
+                                                <circle cx="272" cy="275" r="11" fill="none" stroke="#d8b76b" stroke-width="2"/>
+                                                <g transform="translate(236, 175) scale(0.68)">
+                                                    <path d="M50 15 C35 25 25 45 28 65 C32 80 48 95 62 102 C56 82 62 65 74 48 C85 34 80 18 50 15 Z" fill="#ffffff"/>
+                                                    <circle cx="68" cy="28" r="2.2" fill="#2d6463"/>
+                                                </g>
+                                                <!-- 下方俯冲翱翔的白鸽 -->
+                                                <g transform="translate(240, 680) scale(0.65)">
+                                                    <path d="M10 50 C30 20 60 10 90 20 C70 40 50 60 40 80 C30 75 20 65 10 50 Z" fill="#ffffff"/>
+                                                    <circle cx="25" cy="40" r="2" fill="#2d6463"/>
+                                                </g>
+                                                <!-- 底部守望双鸽 -->
+                                                <g transform="translate(100, 720) scale(0.6)">
+                                                    <path d="M50 15 C35 25 25 45 28 65 C32 80 48 95 62 102 C56 82 62 65 74 48 C85 34 80 18 50 15 Z" fill="#ffffff"/>
+                                                    <circle cx="68" cy="28" r="2.2" fill="#2d6463"/>
+                                                </g>
+                                                <g transform="translate(370, 725) scale(-0.6, 0.6)">
+                                                    <path d="M50 15 C35 25 25 45 28 65 C32 80 48 95 62 102 C56 82 62 65 74 48 C85 34 80 18 50 15 Z" fill="#ffffff"/>
+                                                    <circle cx="68" cy="28" r="2.2" fill="#2d6463"/>
+                                                </g>
+                                                <!-- 飘散轻盈白羽 -->
+                                                <path d="M220 120 C238 135 232 158 215 170 C218 155 212 135 220 120 Z" fill="#ffffff" opacity="0.9"/>
+                                                <path d="M390 320 C408 335 402 358 385 370 C388 355 382 335 390 320 Z" fill="#ffffff" opacity="0.85"/>
+                                                <path d="M140 520 C160 535 155 560 135 572 C139 555 133 535 140 520 Z" fill="#ffffff" opacity="0.9"/>
+                                                <path d="M280 840 C300 852 295 875 275 885 C280 870 274 855 280 840 Z" fill="#ffffff" opacity="0.88"/>
+                                                <!-- 古典粉红手写印信 -->
+                                                <text x="70" y="240" font-family="'Brush Script MT', cursive, serif" font-size="28" fill="#d86e85" opacity="0.85">Oyasumi</text>
+                                                <text x="390" y="820" font-family="'Brush Script MT', cursive, serif" font-size="28" fill="#d86e85" opacity="0.85">Oyasumi</text>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- 档案 4: 从想法到落地 -->
+                            <article class="editorial-item" id="dossier-item-3">
+                                <div class="editorial-content-split">
+                                    <div class="editorial-left">
+                                        <h1 class="editorial-title">从想法到落地</h1>
+                                        <div class="editorial-text">
+                                            <p>大家好，很荣幸能有这个机会向各位展示我的作品。这是一次非常新奇的尝试，因为我以前从未接触过网页设计与开发，所以 AI 成了我重要的合作伙伴。一开始，我的想法很多，也很杂乱，于是我选择先去 Codrops 网站上寻找灵感。我刷到了一个非常有意思的交互效果，借助 AI，我的网页主页就这样有了初步构思。中间也省略了我与 AI 沟通存在障碍、美术方面仍需提升等一系列困难，最后，我还是做出了一个不错的主页。</p>
+                                            <p>接下来，我开始思考：我的自我介绍究竟应该如何展示？最开始，我想用一封书信来呈现，但我发现书信与主页的风格格格不入。后来我又想，不如做成一个房间，可以通过点击物品来展示自己。可是生成出来的房间实在不合我心意。最后，我决定用一个地球来展示。地球做成什么样子会更美观？又该如何借此展示我的自我介绍？一个又一个问题再次跳了出来。总之，我费了九牛二虎之力，终于做出了这个勉强能够入眼的网页。</p>
+                                            <p>这个过程很困难，耗费的时间也不少，但我在其中感受到了制作网页的乐趣。虽然这一次我是借助 AI 完成了这个任务，但这种通过一行行代码实现自己心中 idea 的感觉，实在太令人着迷了。</p>
+                                        </div>
+
+                                        <!-- 灵感来源与参考网页区块 (纯文本展示，不设跳转) -->
+                                        <div class="editorial-references">
+                                            <div class="editorial-references-title">✦ 灵感来源与参考网址</div>
+                                            <ul class="editorial-reference-list">
+                                                <li class="editorial-reference-item">
+                                                    <div class="editorial-reference-box">
+                                                        <span class="ref-tag">主页 3D 交互</span>
+                                                        <span class="ref-url-text">https://github.com/Efetivos/video-projection-codrops.git</span>
+                                                    </div>
+                                                </li>
+                                                <li class="editorial-reference-item">
+                                                    <div class="editorial-reference-box">
+                                                        <span class="ref-tag">3D 太空地球</span>
+                                                        <span class="ref-url-text">https://goodgrowth.com/#/cognichip</span>
+                                                    </div>
+                                                </li>
+                                                <li class="editorial-reference-item">
+                                                    <div class="editorial-reference-box">
+                                                        <span class="ref-tag">档案画廊排版</span>
+                                                        <span class="ref-url-text">https://signal-a.studio</span>
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="editorial-right">
+                                        <div class="editorial-media-card" title="从想法到落地 · 创意火花与典藏画卷">
+                                            <svg viewBox="0 0 545 1024" class="editorial-tarot-svg" xmlns="http://www.w3.org/2000/svg">
+                                                <defs>
+                                                    <pattern id="linenGrid3" width="8" height="8" patternUnits="userSpaceOnUse">
+                                                        <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(255,255,255,0.04)" stroke-width="1.2"/>
+                                                        <line x1="4" y1="0" x2="4" y2="8" stroke="rgba(0,0,0,0.05)" stroke-width="1.2"/>
+                                                    </pattern>
+                                                    <filter id="glowGold3" x="-20%" y="-20%" width="140%" height="140%">
+                                                        <feGaussianBlur stdDeviation="3" result="blur"/>
+                                                        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                                                    </filter>
+                                                </defs>
+                                                <!-- 复古绿底与布纹材质 -->
+                                                <rect width="545" height="1024" fill="#2d6463"/>
+                                                <rect width="545" height="1024" fill="url(#linenGrid3)"/>
+                                                <!-- 内层暗调椭圆光晕 -->
+                                                <ellipse cx="272" cy="512" rx="200" ry="340" fill="#204544" stroke="#2c5b59" stroke-width="2"/>
+                                                <!-- 金色双线边框与圆珠串饰 -->
+                                                <rect x="22" y="22" width="501" height="980" fill="none" stroke="#d8b76b" stroke-width="1.6"/>
+                                                <rect x="34" y="34" width="477" height="956" fill="none" stroke="#d8b76b" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="0 14"/>
+                                                <rect x="46" y="46" width="453" height="932" fill="none" stroke="#d8b76b" stroke-width="1.2"/>
+                                                <!-- 左右古典金环挂耳 -->
+                                                <circle cx="26" cy="512" r="13" fill="#2a1215" stroke="#d8b76b" stroke-width="2"/>
+                                                <circle cx="519" cy="512" r="13" fill="#2a1215" stroke="#d8b76b" stroke-width="2"/>
+                                                <circle cx="26" cy="512" r="4.5" fill="#d8b76b"/>
+                                                <circle cx="519" cy="512" r="4.5" fill="#d8b76b"/>
+                                                
+                                                <!-- 核心插画: 古典里拉琴、月桂枝蔓、排球弧线与画笔 -->
+                                                <!-- 韵律瀑布水幕 -->
+                                                <g stroke="#ffffff" opacity="0.85" stroke-dasharray="2 6">
+                                                    <line x1="230" y1="360" x2="230" y2="720" stroke-width="1.5"/>
+                                                    <line x1="248" y1="340" x2="248" y2="740" stroke-width="1.8"/>
+                                                    <line x1="272" y1="320" x2="272" y2="760" stroke-width="2.2" stroke="#e8fffb"/>
+                                                    <line x1="296" y1="340" x2="296" y2="740" stroke-width="1.8"/>
+                                                    <line x1="314" y1="360" x2="314" y2="720" stroke-width="1.5"/>
+                                                </g>
+                                                <!-- 古典里拉琴 (Harp / Lyre) 琴身 -->
+                                                <path d="M210 400 C190 450 180 540 215 620 C240 670 304 670 329 620 C364 540 354 450 334 400 C310 410 234 410 210 400 Z" fill="none" stroke="#d8b76b" stroke-width="3" filter="url(#glowGold3)"/>
+                                                <!-- 琴弦 (5 根琴弦对应五线谱律动) -->
+                                                <line x1="236" y1="405" x2="242" y2="640" stroke="#ffffff" stroke-width="1.5"/>
+                                                <line x1="254" y1="407" x2="257" y2="650" stroke="#ffffff" stroke-width="1.5"/>
+                                                <line x1="272" y1="408" x2="272" y2="655" stroke="#ffffff" stroke-width="1.8"/>
+                                                <line x1="290" y1="407" x2="287" y2="650" stroke="#ffffff" stroke-width="1.5"/>
+                                                <line x1="308" y1="405" x2="302" y2="640" stroke="#ffffff" stroke-width="1.5"/>
+                                                <!-- 月桂枝叶环绕 -->
+                                                <path d="M190 490 C170 510 160 550 175 580 C190 560 200 520 190 490 Z" fill="#ffffff" opacity="0.8"/>
+                                                <path d="M354 490 C374 510 384 550 369 580 C354 560 344 520 354 490 Z" fill="#ffffff" opacity="0.8"/>
+                                                <!-- 排球动力学圆弧与动态球体 -->
+                                                <circle cx="272" cy="360" r="26" fill="#204544" stroke="#ffffff" stroke-width="2"/>
+                                                <path d="M250 350 C264 355 280 355 294 350" stroke="#d8b76b" stroke-width="1.5"/>
+                                                <path d="M252 368 C266 362 278 362 292 368" stroke="#d8b76b" stroke-width="1.5"/>
+                                                <line x1="272" y1="334" x2="272" y2="386" stroke="#ffffff" stroke-width="1.2"/>
+                                                
+                                                <!-- 顶端白鸽 (衔金环) -->
+                                                <circle cx="272" cy="275" r="11" fill="none" stroke="#d8b76b" stroke-width="2"/>
+                                                <g transform="translate(236, 175) scale(0.68)">
+                                                    <path d="M50 15 C35 25 25 45 28 65 C32 80 48 95 62 102 C56 82 62 65 74 48 C85 34 80 18 50 15 Z" fill="#ffffff"/>
+                                                    <circle cx="68" cy="28" r="2.2" fill="#2d6463"/>
+                                                </g>
+                                                <!-- 展翅立于琴端的白鸽 -->
+                                                <g transform="translate(360, 430) scale(0.55)">
+                                                    <path d="M10 50 C30 20 60 10 90 20 C70 40 50 60 40 80 C30 75 20 65 10 50 Z" fill="#ffffff"/>
+                                                    <circle cx="25" cy="40" r="2" fill="#2d6463"/>
+                                                </g>
+                                                <!-- 底部对栖两只白鸽 -->
+                                                <g transform="translate(100, 720) scale(0.6)">
+                                                    <path d="M50 15 C35 25 25 45 28 65 C32 80 48 95 62 102 C56 82 62 65 74 48 C85 34 80 18 50 15 Z" fill="#ffffff"/>
+                                                    <circle cx="68" cy="28" r="2.2" fill="#2d6463"/>
+                                                </g>
+                                                <g transform="translate(370, 725) scale(-0.6, 0.6)">
+                                                    <path d="M50 15 C35 25 25 45 28 65 C32 80 48 95 62 102 C56 82 62 65 74 48 C85 34 80 18 50 15 Z" fill="#ffffff"/>
+                                                    <circle cx="68" cy="28" r="2.2" fill="#2d6463"/>
+                                                </g>
+                                                <!-- 飘散轻盈白羽 -->
+                                                <path d="M260 80 C275 95 272 120 255 130 C258 115 252 95 260 80 Z" fill="#ffffff" opacity="0.85"/>
+                                                <path d="M160 380 C180 395 175 420 155 432 C159 415 153 395 160 380 Z" fill="#ffffff" opacity="0.9"/>
+                                                <path d="M380 330 C398 345 392 368 375 380 C378 365 372 345 380 330 Z" fill="#ffffff" opacity="0.85"/>
+                                                <path d="M280 830 C300 842 295 865 275 875 C280 860 274 845 280 830 Z" fill="#ffffff" opacity="0.88"/>
+                                                <!-- 古典粉红手写印信 -->
+                                                <text x="70" y="240" font-family="'Brush Script MT', cursive, serif" font-size="28" fill="#d86e85" opacity="0.85">Oyasumi</text>
+                                                <text x="390" y="820" font-family="'Brush Script MT', cursive, serif" font-size="28" fill="#d86e85" opacity="0.85">Oyasumi</text>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        </main>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- 主页底部单一简约拇指大小按键 (三合一，点击进入日系手绘房间) -->
+    <nav class="bottom-nav" id="bottomNav">
+        <button class="single-room-btn" id="btn-enter-room" aria-label="Enter Earth Cosmos" title="点击探索地球宇宙">
+            <!-- 极简科技地球经纬图标 -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9.5"></circle>
+                <path d="M2.5 12h19"></path>
+                <path d="M12 2.5a15 15 0 0 1 0 19"></path>
+                <path d="M12 2.5a15 15 0 0 0 0 19"></path>
+            </svg>
+        </button>
+    </nav>
+
+    <script>
+        const container = document.getElementById('webgl-container');
+        const bgScene = new THREE.Scene();
+        const bgCamera = new THREE.OrthographicCamera(
+            window.innerWidth / -2, window.innerWidth / 2, 
+            window.innerHeight / 2, window.innerHeight / -2, 
+            1, 1000
+        );
+        bgCamera.position.z = 1;
+
+        const bgRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        bgRenderer.setSize(window.innerWidth, window.innerHeight);
+        bgRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(bgRenderer.domElement);
+
+        const bgVertexShader = `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `;
+
+        const bgFragmentShader = `
+            uniform sampler2D uTexture;
+            uniform vec2 uMouse;
+            uniform float uHoverState;
+            uniform float uBrightness;
+            varying vec2 vUv;
+
+            void main() {
+                float dist = distance(vUv, uMouse);
+                float distortion = exp(-dist * 8.0) * 0.08 * uHoverState;
+                vec2 direction = normalize(vUv - uMouse);
+                vec2 distortedUv = vUv + direction * distortion;
+                
+                float r = texture2D(uTexture, distortedUv + vec2(distortion * 0.5, 0.0)).r;
+                float g = texture2D(uTexture, distortedUv).g;
+                float b = texture2D(uTexture, distortedUv - vec2(distortion * 0.5, 0.0)).b;
+                
+                gl_FragColor = vec4(vec3(r, g, b) * uBrightness, 1.0);
+            }
+        `;
+
+        const bgUniforms = {
+            uTexture: { value: null },
+            uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+            uHoverState: { value: 0.0 },
+            uBrightness: { value: 1.0 }
+        };
+
+        function createDynamicBgTexture(isDark = false) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1920;
+            canvas.height = 1080;
+            const ctx = canvas.getContext('2d');
+            
+            if (!isDark) {
+                const grad = ctx.createLinearGradient(0, 0, 1920, 1080);
+                grad.addColorStop(0, '#f8fafd');
+                grad.addColorStop(0.35, '#eef2ff');
+                grad.addColorStop(0.7, '#e0e7ff');
+                grad.addColorStop(1, '#dbeafe');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 1920, 1080);
+
+                const blob = ctx.createRadialGradient(960, 540, 50, 960, 540, 750);
+                blob.addColorStop(0, 'rgba(129, 140, 248, 0.28)');
+                blob.addColorStop(0.5, 'rgba(192, 132, 252, 0.18)');
+                blob.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.fillStyle = blob;
+                ctx.fillRect(0, 0, 1920, 1080);
+
+                ctx.strokeStyle = 'rgba(99, 102, 241, 0.12)';
+                ctx.lineWidth = 1;
+            } else {
+                const grad = ctx.createRadialGradient(960, 540, 100, 960, 540, 1000);
+                grad.addColorStop(0, '#121422');
+                grad.addColorStop(0.6, '#08090f');
+                grad.addColorStop(1, '#020204');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 1920, 1080);
+
+                const blob = ctx.createRadialGradient(960, 540, 50, 960, 540, 600);
+                blob.addColorStop(0, 'rgba(99, 102, 241, 0.35)');
+                blob.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = blob;
+                ctx.fillRect(0, 0, 1920, 1080);
+
+                ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)';
+                ctx.lineWidth = 1.2;
+            }
+
+            for (let x = 0; x < 1920; x += 64) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 1080); ctx.stroke();
+            }
+            for (let y = 0; y < 1080; y += 64) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1920, y); ctx.stroke();
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.minFilter = THREE.LinearFilter;
+            tex.magFilter = THREE.LinearFilter;
+            return tex;
+        }
+
+        bgUniforms.uTexture.value = createDynamicBgTexture(false);
+
+        const bgGeometry = new THREE.PlaneGeometry(window.innerWidth, window.innerHeight, 32, 32);
+        const bgMaterial = new THREE.ShaderMaterial({
+            vertexShader: bgVertexShader,
+            fragmentShader: bgFragmentShader,
+            uniforms: bgUniforms
+        });
+        const bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
+        bgScene.add(bgMesh);
+
+        // 3D 钻石小方块投影主图
+        const projCanvas = document.getElementById('projection-canvas');
+        const projScene = new THREE.Scene();
+        const projCamera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
+        projCamera.position.set(0, 0, 5.8);
+
+        const projRenderer = new THREE.WebGLRenderer({
+            canvas: projCanvas,
+            alpha: true,
+            antialias: true
+        });
+        projRenderer.setSize(window.innerWidth, window.innerHeight);
+        projRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const projAmbientLight = new THREE.AmbientLight(0xffffff, 1.2);
+        projScene.add(projAmbientLight);
+        const projDirLight = new THREE.DirectionalLight(0xffffff, 1.8);
+        projDirLight.position.set(5, 5, 8);
+        projScene.add(projDirLight);
+
+        const videoCanvas = document.createElement('canvas');
+        videoCanvas.width = 512;
+        videoCanvas.height = 512;
+        const vCtx = videoCanvas.getContext('2d');
+        const videoTexture = new THREE.CanvasTexture(videoCanvas);
+        videoTexture.minFilter = THREE.LinearFilter;
+        videoTexture.magFilter = THREE.LinearFilter;
+
+        const cubeMaterial = new THREE.MeshStandardMaterial({
+            map: videoTexture,
+            roughness: 0.25,
+            metalness: 0.15,
+            side: THREE.FrontSide
+        });
+
+        const mainGroup = new THREE.Group();
+        projScene.add(mainGroup);
+
+        const gridSize = 23;
+        const boxSize = 0.088;
+        const spacing = 0.108;
+        const diamondRadius = 11;
+        const cubes = [];
+
+        for (let x = 0; x < gridSize; x++) {
+            for (let y = 0; y < gridSize; y++) {
+                const dx = x - (gridSize - 1) / 2;
+                const dy = y - (gridSize - 1) / 2;
+
+                if (Math.abs(dx) + Math.abs(dy) <= diamondRadius) {
+                    const geom = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
+
+                    const uvAttr = geom.attributes.uv;
+                    const uvArr = uvAttr.array;
+                    const uMin = x / gridSize;
+                    const vMin = y / gridSize;
+                    const uStep = 1 / gridSize;
+                    const vStep = 1 / gridSize;
+
+                    for (let i = 0; i < uvArr.length; i += 2) {
+                        uvArr[i] = uMin + uvArr[i] * uStep;
+                        uvArr[i + 1] = vMin + uvArr[i + 1] * vStep;
+                    }
+                    uvAttr.needsUpdate = true;
+
+                    const cubeMesh = new THREE.Mesh(geom, cubeMaterial);
+                    cubeMesh.position.x = dx * spacing;
+                    cubeMesh.position.y = dy * spacing;
+                    cubeMesh.position.z = 0;
+
+                    cubeMesh.userData = {
+                        baseX: cubeMesh.position.x,
+                        baseY: cubeMesh.position.y,
+                        distToCenter: Math.sqrt(dx * dx + dy * dy),
+                        targetZ: 0,
+                        targetScale: 1,
+                        targetScaleZ: 1
+                    };
+
+                    mainGroup.add(cubeMesh);
+                    cubes.push(cubeMesh);
+                }
+            }
+        }
+
+        const targetMouse = new THREE.Vector2(0.5, 0.5);
+        const currentMouse = new THREE.Vector2(0.5, 0.5);
+        
+        const raycaster = new THREE.Raycaster();
+        const rayMouse = new THREE.Vector2(0, 0);
+        const hitPlaneMesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(10, 10),
+            new THREE.MeshBasicMaterial({ visible: false })
+        );
+        mainGroup.add(hitPlaneMesh);
+        
+        let targetHover = 0.0;
+        let currentHover = 0.0;
+        let mouseScreenX = 0;
+        let mouseScreenY = 0;
+        let hoverPoint = new THREE.Vector3(999, 999, 999); 
+
+        window.addEventListener('mousemove', (event) => {
+            targetMouse.x = event.clientX / window.innerWidth;
+            targetMouse.y = 1.0 - (event.clientY / window.innerHeight);
+            mouseScreenX = (event.clientX / window.innerWidth - 0.5) * 2;
+            mouseScreenY = -(event.clientY / window.innerHeight - 0.5) * 2;
+            
+            rayMouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            rayMouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        document.body.addEventListener('mouseenter', () => { targetHover = 1.0; });
+        document.body.addEventListener('mouseleave', () => { 
+            targetHover = 0.0; 
+            hoverPoint.set(999, 999, 999); 
+        });
+
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            bgCamera.left = width / -2;
+            bgCamera.right = width / 2;
+            bgCamera.top = height / 2;
+            bgCamera.bottom = height / -2;
+            bgCamera.updateProjectionMatrix();
+            bgRenderer.setSize(width, height);
+            bgMesh.geometry.dispose();
+            bgMesh.geometry = new THREE.PlaneGeometry(width, height, 32, 32);
+
+            projCamera.aspect = width / height;
+            projCamera.updateProjectionMatrix();
+            projRenderer.setSize(width, height);
+        });
+
+        let clock = 0;
+        function updateVideoTextureCanvas() {
+            clock += 0.02;
+            const w = 512, h = 512;
+            
+            const g1 = vCtx.createRadialGradient(
+                256 + Math.sin(clock * 1.2) * 140,
+                256 + Math.cos(clock * 1.5) * 140,
+                30,
+                256, 256, 320
+            );
+            
+            const isDark = document.body.classList.contains('dark-mode');
+            if (!isDark) {
+                g1.addColorStop(0, '#6366f1');
+                g1.addColorStop(0.3, '#ec4899');
+                g1.addColorStop(0.6, '#38bdf8');
+                g1.addColorStop(1, '#a855f7');
+            } else {
+                g1.addColorStop(0, '#818cf8');
+                g1.addColorStop(0.35, '#c084fc');
+                g1.addColorStop(0.7, '#22d3ee');
+                g1.addColorStop(1, '#312e81');
+            }
+
+            vCtx.fillStyle = g1;
+            vCtx.fillRect(0, 0, w, h);
+
+            vCtx.save();
+            vCtx.translate(256, 256);
+            vCtx.rotate(clock * 0.4);
+            vCtx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+            vCtx.lineWidth = 14;
+            vCtx.strokeRect(-120, -120, 240, 240);
+            vCtx.restore();
+
+            videoTexture.needsUpdate = true;
+        }
+
+                // ----------------------------------------------------
+        // 3D 太空地球与悬浮轨道引擎 (Three.js WebGL Earth System)
+        // 灵感参考: goodgrowth.com/#/cognichip
+        // ----------------------------------------------------
+        const earthCanvas = document.getElementById('earth-canvas');
+        const spaceViewport = document.getElementById('spaceEarthViewport');
+        const orbitNodesLayer = document.getElementById('orbitNodesLayer');
+
+        const earthScene = new THREE.Scene();
+        const earthCamera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+        earthCamera.position.set(0, 0, 5.8);
+
+        const earthRenderer = new THREE.WebGLRenderer({
+            canvas: earthCanvas,
+            alpha: true,
+            antialias: true
+        });
+        earthRenderer.setSize(window.innerWidth, window.innerHeight);
+        earthRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+                // 灯光系统：纯净银白平行光 + 深邃星空环境光
+        const earthAmbientLight = new THREE.AmbientLight(0x223348, 1.4);
+        earthScene.add(earthAmbientLight);
+
+        const earthSunLight = new THREE.DirectionalLight(0xffffff, 2.4);
+        earthSunLight.position.set(5.5, 3.5, 5.0);
+        earthScene.add(earthSunLight);
+
+        // 1. 发光与星空光学贴图生成器 (Photometric Glow & Astrophotography Starburst Textures)
+        function createGlowPointTexture(size = 64, innerColor = 'rgba(255, 255, 255, 1)', glowColor = 'rgba(215, 235, 255, 0.9)', midColor = 'rgba(125, 185, 255, 0.4)', outerColor = 'rgba(0, 0, 0, 0)') {
+            const cvs = document.createElement('canvas');
+            cvs.width = size;
+            cvs.height = size;
+            const ctx = cvs.getContext('2d');
+            const center = size / 2;
+            const grad = ctx.createRadialGradient(center, center, 0, center, center, center);
+            grad.addColorStop(0, innerColor);
+            grad.addColorStop(0.2, glowColor);
+            grad.addColorStop(0.55, midColor);
+            grad.addColorStop(1, outerColor);
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, size, size);
+            const tex = new THREE.CanvasTexture(cvs);
+            tex.minFilter = THREE.LinearFilter;
+            tex.magFilter = THREE.LinearFilter;
+            return tex;
+        }
+
+        // 星云柔和光雾贴图 (Interstellar Nebula Cloud Texture)
+        function createCosmicNebulaTexture(size = 128) {
+            const cvs = document.createElement('canvas');
+            cvs.width = size;
+            cvs.height = size;
+            const ctx = cvs.getContext('2d');
+            const center = size / 2;
+            const grad = ctx.createRadialGradient(center, center, 0, center, center, center);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            grad.addColorStop(0.18, 'rgba(240, 245, 255, 0.85)');
+            grad.addColorStop(0.42, 'rgba(180, 215, 255, 0.48)');
+            grad.addColorStop(0.68, 'rgba(120, 165, 255, 0.16)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, size, size);
+            const tex = new THREE.CanvasTexture(cvs);
+            tex.minFilter = THREE.LinearFilter;
+            tex.magFilter = THREE.LinearFilter;
+            return tex;
+        }
+
+        // 大师摄影级亮星十字衍射星芒贴图 (Diffraction Spike Starburst Texture)
+        function createDiffractionStarTexture(size = 128) {
+            const cvs = document.createElement('canvas');
+            cvs.width = size;
+            cvs.height = size;
+            const ctx = cvs.getContext('2d');
+            const center = size / 2;
+
+            // A. 中央光晕星冕 (纯白)
+            const haloGrad = ctx.createRadialGradient(center, center, 0, center, center, center * 0.65);
+            haloGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            haloGrad.addColorStop(0.25, 'rgba(255, 255, 255, 0.75)');
+            haloGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0.25)');
+            haloGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = haloGrad;
+            ctx.fillRect(0, 0, size, size);
+
+            // B. 四角主十字衍射光锥与微弱次级星芒 (纯白)
+            function drawSpike(angle, length, width) {
+                ctx.save();
+                ctx.translate(center, center);
+                ctx.rotate(angle);
+                const spikeGrad = ctx.createLinearGradient(-length, 0, length, 0);
+                spikeGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+                spikeGrad.addColorStop(0.35, 'rgba(255, 255, 255, 0.5)');
+                spikeGrad.addColorStop(0.5, 'rgba(255, 255, 255, 1)');
+                spikeGrad.addColorStop(0.65, 'rgba(255, 255, 255, 0.5)');
+                spikeGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                spikeGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.fillStyle = spikeGrad;
+                ctx.beginPath();
+                ctx.moveTo(-length, 0);
+                ctx.lineTo(0, -width);
+                ctx.lineTo(length, 0);
+                ctx.lineTo(0, width);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+
+            drawSpike(0, center * 0.95, 2.0); // 水平主芒
+            drawSpike(Math.PI / 2, center * 0.95, 2.0); // 垂直主芒
+            drawSpike(Math.PI / 4, center * 0.55, 1.2); // 45度斜芒
+            drawSpike(-Math.PI / 4, center * 0.55, 1.2); // -45度斜芒
+
+            // C. 白炽恒星核
+            ctx.beginPath();
+            ctx.arc(center, center, 3.5, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+
+            const tex = new THREE.CanvasTexture(cvs);
+            tex.minFilter = THREE.LinearFilter;
+            tex.magFilter = THREE.LinearFilter;
+            return tex;
+        }
+
+        // 灵动海洋萤火虫专属发光贴图 (Bioluminescent Marine Firefly Mote)
+        function createFireflyTexture(size = 64) {
+            const cvs = document.createElement('canvas');
+            cvs.width = size;
+            cvs.height = size;
+            const ctx = cvs.getContext('2d');
+            const center = size / 2;
+
+            const grad = ctx.createRadialGradient(center, center, 0, center, center, center * 0.9);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+            grad.addColorStop(0.18, 'rgba(240, 255, 250, 0.95)');
+            grad.addColorStop(0.42, 'rgba(74, 250, 216, 0.7)');
+            grad.addColorStop(0.72, 'rgba(38, 185, 255, 0.25)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, size, size);
+
+            const tex = new THREE.CanvasTexture(cvs);
+            tex.minFilter = THREE.LinearFilter;
+            tex.magFilter = THREE.LinearFilter;
+            return tex;
+        }
+
+        const glowPointTex = createGlowPointTexture(64);
+        const pureWhiteStarTex = createGlowPointTexture(64, 'rgba(255, 255, 255, 1)', 'rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.45)', 'rgba(0, 0, 0, 0)');
+        const goldPointTex = createGlowPointTexture(64, 'rgba(255, 255, 255, 1)', 'rgba(245, 180, 80, 0.95)', 'rgba(180, 110, 30, 0.45)', 'rgba(0, 0, 0, 0)');
+        const hubPointTex = createGlowPointTexture(64, 'rgba(255, 255, 255, 1)', 'rgba(255, 255, 255, 0.95)', 'rgba(186, 230, 253, 0.6)', 'rgba(0, 0, 0, 0)');
+        const cosmicNebulaTex = createCosmicNebulaTexture(128);
+        const diffractionStarTex = createDiffractionStarTexture(128);
+        const fireflyPointTex = createFireflyTexture(64);
+
+        // 2. 璀璨银河与大师摄影级深空星野系统 (Master Astrophotography Cosmic Deep-Sky)
+        const cosmicBackgroundGroup = new THREE.Group();
+        earthScene.add(cosmicBackgroundGroup);
+
+        const galacticTiltX = 0.88; // 倾斜横贯天际
+        const galacticTiltZ = 0.52;
+
+        // A. 宇宙深空发射与反射星云光雾层 (Interstellar Gas Nebula Clouds, 480 points)
+        const nebulaCount = 480;
+        const nebPositions = [];
+        const nebColors = [];
+
+        for (let i = 0; i < nebulaCount; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const u1 = Math.random(), u2 = Math.random();
+            const randStd = Math.sqrt(-2.0 * Math.log(Math.max(1e-6, u1))) * Math.cos(2.0 * Math.PI * u2);
+            const latDisp = randStd * 0.18;
+            const r = 50 + Math.random() * 45;
+
+            const rawX = r * Math.cos(theta) * Math.cos(latDisp);
+            const rawY = r * Math.sin(latDisp);
+            const rawZ = r * Math.sin(theta) * Math.cos(latDisp);
+
+            const p = new THREE.Vector3(rawX, rawY, rawZ);
+            p.applyAxisAngle(new THREE.Vector3(1, 0, 0), galacticTiltX);
+            p.applyAxisAngle(new THREE.Vector3(0, 0, 1), galacticTiltZ);
+            nebPositions.push(p.x, p.y, p.z);
+
+            // 纯白微星尘 (Pure White Stardust Mist)
+            nebColors.push(0.95, 0.98, 1.0);
+        }
+        const nebGeom = new THREE.BufferGeometry();
+        nebGeom.setAttribute('position', new THREE.Float32BufferAttribute(nebPositions, 3));
+        nebGeom.setAttribute('color', new THREE.Float32BufferAttribute(nebColors, 3));
+        const nebMat = new THREE.PointsMaterial({
+            size: 22.0,
+            map: cosmicNebulaTex,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.18,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const cosmicNebulaMesh = new THREE.Points(nebGeom, nebMat);
+        cosmicBackgroundGroup.add(cosmicNebulaMesh);
+
+        // 银河繁星流萤闪烁着色材质 (Milky Way Firefly Sparkle Shader Material)
+        let milkyWaySparkleMat = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uTexture: { value: pureWhiteStarTex }
+            },
+            vertexShader: `
+                uniform float uTime;
+                attribute float aPhase;
+                attribute float aSpeed;
+                attribute float aSize;
+                attribute vec3 aColor;
+                varying vec3 vColor;
+                varying float vAlpha;
+
+                void main() {
+                    vColor = aColor;
+
+                    // 银河繁星如流萤般灵动闪烁 (Scintillation & Breathing like cosmic fireflies)
+                    float tFast = uTime * aSpeed * 3.2 + aPhase;
+                    float tSlow = uTime * aSpeed * 0.85 + aPhase * 1.5;
+
+                    // 萤火虫闪亮脉冲：高次幂形成如钻石闪烁的瞬间放光
+                    float spark = pow(max(0.0, sin(tFast)), 3.5);
+                    float breath = 0.32 + 0.68 * (0.5 + 0.5 * sin(tSlow));
+
+                    float intensity = mix(breath, 1.35, spark * 0.85);
+                    vAlpha = clamp(intensity, 0.20, 1.0);
+
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    float dynamicSize = aSize * (0.8 + 0.65 * spark);
+                    gl_PointSize = dynamicSize * (520.0 / -mvPosition.z);
+                    gl_PointSize = clamp(gl_PointSize, 1.5, 48.0);
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D uTexture;
+                varying vec3 vColor;
+                varying float vAlpha;
+
+                void main() {
+                    vec4 texColor = texture2D(uTexture, gl_PointCoord);
+                    gl_FragColor = vec4(vColor * texColor.rgb, texColor.a * vAlpha);
+                }
+            `,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            depthTest: false
+        });
+
+        // B. 银河主光带密集星流 (Milky Way Galactic Plane Ribbon, 8500 particles)
+        const milkyWayCount = 8500;
+        const mwPositions = [];
+        const mwColors = [];
+        const mwPhases = [];
+        const mwSpeeds = [];
+        const mwSizes = [];
+
+        for (let i = 0; i < milkyWayCount; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const u1 = Math.random(), u2 = Math.random();
+            const randStd = Math.sqrt(-2.0 * Math.log(Math.max(1e-6, u1))) * Math.cos(2.0 * Math.PI * u2);
+            const latDisp = randStd * 0.14; // 高度集中于银道面
+            const r = 48 + Math.random() * 68;
+
+            const rawX = r * Math.cos(theta) * Math.cos(latDisp);
+            const rawY = r * Math.sin(latDisp);
+            const rawZ = r * Math.sin(theta) * Math.cos(latDisp);
+
+            const p = new THREE.Vector3(rawX, rawY, rawZ);
+            p.applyAxisAngle(new THREE.Vector3(1, 0, 0), galacticTiltX);
+            p.applyAxisAngle(new THREE.Vector3(0, 0, 1), galacticTiltZ);
+            mwPositions.push(p.x, p.y, p.z);
+
+            // 纯白流萤恒星光 (Pure White Firefly Starstream)
+            mwColors.push(1.0, 1.0, 1.0);
+
+            mwPhases.push(Math.random() * Math.PI * 2);
+            mwSpeeds.push(0.9 + Math.random() * 2.2);
+            mwSizes.push(0.18 + Math.random() * 0.16);
+        }
+
+        const mwGeom = new THREE.BufferGeometry();
+        mwGeom.setAttribute('position', new THREE.Float32BufferAttribute(mwPositions, 3));
+        mwGeom.setAttribute('aColor', new THREE.Float32BufferAttribute(mwColors, 3));
+        mwGeom.setAttribute('aPhase', new THREE.Float32BufferAttribute(mwPhases, 1));
+        mwGeom.setAttribute('aSpeed', new THREE.Float32BufferAttribute(mwSpeeds, 1));
+        mwGeom.setAttribute('aSize', new THREE.Float32BufferAttribute(mwSizes, 1));
+
+        const milkyWayMesh = new THREE.Points(mwGeom, milkyWaySparkleMat);
+        cosmicBackgroundGroup.add(milkyWayMesh);
+
+        // C. 银心高曝光闪耀巨星群 (Bulge Sparkling Glitter Giants, 1600 particles - 纯白白炽)
+        const mwBrightCount = 1600;
+        const brightPositions = [];
+        const brightColors = [];
+        const brightPhases = [];
+        const brightSpeeds = [];
+        const brightSizes = [];
+
+        for (let i = 0; i < mwBrightCount; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const u1 = Math.random(), u2 = Math.random();
+            const randStd = Math.sqrt(-2.0 * Math.log(Math.max(1e-6, u1))) * Math.cos(2.0 * Math.PI * u2);
+            const latDisp = randStd * 0.12;
+            const r = 48 + Math.random() * 65;
+
+            const rawX = r * Math.cos(theta) * Math.cos(latDisp);
+            const rawY = r * Math.sin(latDisp);
+            const rawZ = r * Math.sin(theta) * Math.cos(latDisp);
+
+            const p = new THREE.Vector3(rawX, rawY, rawZ);
+            p.applyAxisAngle(new THREE.Vector3(1, 0, 0), galacticTiltX);
+            p.applyAxisAngle(new THREE.Vector3(0, 0, 1), galacticTiltZ);
+            brightPositions.push(p.x, p.y, p.z);
+
+            // 纯白白炽巨星
+            brightColors.push(1.0, 1.0, 1.0);
+
+            brightPhases.push(Math.random() * Math.PI * 2);
+            brightSpeeds.push(1.1 + Math.random() * 2.4);
+            brightSizes.push(0.38 + Math.random() * 0.30);
+        }
+
+        const brightGeom = new THREE.BufferGeometry();
+        brightGeom.setAttribute('position', new THREE.Float32BufferAttribute(brightPositions, 3));
+        brightGeom.setAttribute('aColor', new THREE.Float32BufferAttribute(brightColors, 3));
+        brightGeom.setAttribute('aPhase', new THREE.Float32BufferAttribute(brightPhases, 1));
+        brightGeom.setAttribute('aSpeed', new THREE.Float32BufferAttribute(brightSpeeds, 1));
+        brightGeom.setAttribute('aSize', new THREE.Float32BufferAttribute(brightSizes, 1));
+
+        const milkyWayBrightMesh = new THREE.Points(brightGeom, milkyWaySparkleMat);
+        cosmicBackgroundGroup.add(milkyWayBrightMesh);
+
+        // D. 大师摄影级十字星芒亮星 (Diffraction Spike Primary Stars, 55 stars - 纯白天狼星白)
+        let diffractionStarsMesh = null;
+        const spikeCount = 55;
+        const spikePositions = [];
+        const spikeColors = [];
+        for (let i = 0; i < spikeCount; i++) {
+            const r = 50 + Math.random() * 65;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(Math.random() * 2 - 1);
+            spikePositions.push(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+            
+            // 纯白十字星芒
+            spikeColors.push(1.0, 1.0, 1.0);
+        }
+        const spikeGeom = new THREE.BufferGeometry();
+        spikeGeom.setAttribute('position', new THREE.Float32BufferAttribute(spikePositions, 3));
+        spikeGeom.setAttribute('color', new THREE.Float32BufferAttribute(spikeColors, 3));
+        const spikeMat = new THREE.PointsMaterial({
+            size: 3.5,
+            map: diffractionStarTex,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.95,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        diffractionStarsMesh = new THREE.Points(spikeGeom, spikeMat);
+        cosmicBackgroundGroup.add(diffractionStarsMesh);
+
+        // E. 全天区各向同性深空繁星 (Omnidirectional Starfield, 3800 stars - 纯白银钻)
+        const bgStarCount = 3800;
+        const bgStarPositions = [];
+        const bgStarColors = [];
+        const bgStarPhases = [];
+        const bgStarSpeeds = [];
+        const bgStarSizes = [];
+
+        for (let i = 0; i < bgStarCount; i++) {
+            const r = 55 + Math.random() * 85;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(Math.random() * 2 - 1);
+            bgStarPositions.push(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+
+            // 纯白深空背景繁星
+            bgStarColors.push(1.0, 1.0, 1.0);
+
+            bgStarPhases.push(Math.random() * Math.PI * 2);
+            bgStarSpeeds.push(0.8 + Math.random() * 1.8);
+            bgStarSizes.push(0.16 + Math.random() * 0.14);
+        }
+        const bgStarGeom = new THREE.BufferGeometry();
+        bgStarGeom.setAttribute('position', new THREE.Float32BufferAttribute(bgStarPositions, 3));
+        bgStarGeom.setAttribute('aColor', new THREE.Float32BufferAttribute(bgStarColors, 3));
+        bgStarGeom.setAttribute('aPhase', new THREE.Float32BufferAttribute(bgStarPhases, 1));
+        bgStarGeom.setAttribute('aSpeed', new THREE.Float32BufferAttribute(bgStarSpeeds, 1));
+        bgStarGeom.setAttribute('aSize', new THREE.Float32BufferAttribute(bgStarSizes, 1));
+
+        const bgStarMesh = new THREE.Points(bgStarGeom, milkyWaySparkleMat);
+        cosmicBackgroundGroup.add(bgStarMesh);
+
+                // 3. 构建高精度真实六大洲与大洋大陆架遮罩画布 (Geographically Accurate Continents & Oceans Mask)
+        function createWorldContinentMask() {
+            const cvs = document.createElement('canvas');
+            cvs.width = 1024;
+            cvs.height = 512;
+            const ctx = cvs.getContext('2d');
+
+            // 浩瀚大洋背景色 (纯黑)
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, 1024, 512);
+
+            function drawPoly(points) {
+                ctx.beginPath();
+                points.forEach((p, idx) => {
+                    const px = (p[0] / 360 + 0.5) * 1024;
+                    const py = (0.5 - p[1] / 180) * 512;
+                    if (idx === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                });
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            ctx.fillStyle = '#ffffff';
+
+            // ==========================================
+            // 【一、欧亚大陆 (Asia & Europe - Eurasia Mainland)】
+            // ==========================================
+            drawPoly([
+                [-9, 38], [-9, 43], [-1, 43], [-2, 47], [-4, 48], [0, 49], [2, 51], [5, 53], [8, 54],
+                [8, 57], [10, 57], [12, 55], [14, 54], [19, 54], [21, 56], [22, 58], [24, 59], [28, 60],
+                [24, 65], [18, 68], [15, 68], [12, 65], [5, 62], [5, 60], [10, 58], [15, 56], [20, 60],
+                [25, 71], [30, 70], [40, 67], [50, 68], [60, 70], [70, 73], [78, 72], [85, 76], [100, 77],
+                [112, 75], [125, 73], [140, 72], [150, 71], [160, 70], [170, 66], [179, 66], [170, 64],
+                [162, 60], [160, 55], [156, 51], [150, 46], [143, 50], [140, 53], [135, 48], [131, 43],
+                [129, 36], [127, 34], [129, 38], [125, 39], [121, 40], [118, 39], [120, 36], [122, 30],
+                [120, 26], [116, 23], [113, 22], [108, 21], [106, 11], [103, 1], [100, 7], [98, 12],
+                [92, 21], [88, 22], [82, 17], [80, 13], [77, 8], [75, 12], [72, 19], [69, 23], [65, 25],
+                [58, 25], [56, 26], [54, 23], [56, 21], [54, 16], [48, 14], [44, 12], [43, 16], [39, 21],
+                [35, 27], [35, 32], [32, 31], [27, 37], [26, 40], [23, 40], [20, 39], [16, 41], [12, 44],
+                [9, 44], [3, 42], [0, 40], [-2, 37], [-6, 36], [-9, 37], [-9, 38]
+            ]);
+
+            // 不列颠群岛 (大不列颠 & 爱尔兰)
+            drawPoly([[-5, 50], [0, 51], [1, 53], [0, 56], [-3, 58], [-5, 57], [-4, 54], [-5, 50]]);
+            drawPoly([[-10, 52], [-6, 52], [-6, 55], [-10, 54], [-10, 52]]);
+
+            // 日本列岛 (本州、九州与北海道)
+            drawPoly([[130, 32], [132, 34], [136, 35], [139, 35], [141, 41], [140, 40], [136, 36], [131, 33], [130, 32]]);
+            drawPoly([[140, 42], [144, 44], [145, 43], [141, 45], [140, 42]]);
+
+            // 台湾岛与海南岛
+            drawPoly([[120, 22], [122, 25], [121, 22], [120, 22]]);
+            drawPoly([[109, 18], [111, 20], [110, 18], [109, 18]]);
+
+            // 斯里兰卡
+            drawPoly([[80, 6], [82, 8], [80, 10], [79, 8], [80, 6]]);
+
+            // 东南亚群岛 (苏门答腊、爪哇、婆罗洲、苏拉威西与菲律宾群岛)
+            drawPoly([[96, 5], [100, 2], [105, -3], [106, -6], [103, -4], [99, -1], [96, 5]]);
+            drawPoly([[106, -6], [114, -8], [112, -8], [106, -6]]);
+            drawPoly([[110, 1], [117, 4], [119, 2], [116, -3], [111, -3], [109, 0], [110, 1]]);
+            drawPoly([[120, 18], [124, 13], [126, 8], [122, 7], [121, 14], [120, 18]]);
+
+            // ==========================================
+            // 【二、非洲大陆 (Africa Mainland)】
+            // ==========================================
+            drawPoly([
+                [-6, 36], [-1, 36], [4, 37], [10, 37], [11, 33], [15, 32], [20, 32], [25, 32],
+                [32, 31], [34, 28], [37, 22], [43, 12], [51, 10], [48, 5], [44, -1], [40, -5],
+                [40, -10], [36, -18], [35, -24], [32, -28], [28, -32], [25, -34], [19, -34], [17, -30],
+                [15, -24], [12, -18], [12, -12], [9, -5], [9, 4], [4, 5], [1, 6], [-3, 5],
+                [-8, 4], [-12, 7], [-17, 14], [-16, 20], [-13, 28], [-10, 30], [-6, 36]
+            ]);
+
+            // 马达加斯加岛
+            drawPoly([[44, -13], [50, -14], [48, -20], [47, -25], [44, -25], [44, -19], [44, -13]]);
+
+            // ==========================================
+            // 【三、北美洲大陆 (North America Mainland)】
+            // ==========================================
+            drawPoly([
+                [-168, 65], [-160, 71], [-150, 70], [-130, 70], [-120, 68], [-110, 69], [-95, 69], [-85, 66],
+                [-80, 62], [-90, 60], [-94, 55], [-82, 52], [-80, 56], [-75, 58], [-65, 58], [-60, 55],
+                [-64, 47], [-60, 46], [-66, 44], [-70, 42], [-74, 40], [-76, 35], [-80, 30], [-81, 25],
+                [-83, 29], [-88, 30], [-94, 29], [-97, 26], [-97, 21], [-92, 18], [-88, 16], [-84, 10],
+                [-80, 8], [-77, 8], [-83, 10], [-86, 13], [-90, 14], [-94, 16], [-97, 16], [-105, 20],
+                [-105, 23], [-110, 24], [-112, 29], [-115, 32], [-120, 35], [-124, 40], [-124, 47],
+                [-128, 52], [-133, 55], [-137, 59], [-145, 60], [-152, 59], [-160, 56], [-165, 60],
+                [-168, 65]
+            ]);
+
+            // 格陵兰岛 (Greenland)
+            drawPoly([
+                [-45, 60], [-40, 64], [-30, 68], [-20, 71], [-18, 77], [-25, 82],
+                [-40, 83], [-55, 83], [-65, 80], [-58, 75], [-52, 70], [-48, 65], [-45, 60]
+            ]);
+
+            // 古巴与加勒比群岛
+            drawPoly([[-84, 22], [-76, 21], [-75, 20], [-80, 22], [-84, 22]]);
+            // 冰岛
+            drawPoly([[-24, 64], [-14, 65], [-14, 66], [-22, 66], [-24, 64]]);
+
+            // ==========================================
+            // 【四、南美洲大陆 (South America Mainland)】
+            // ==========================================
+            drawPoly([
+                [-77, 8], [-72, 12], [-65, 11], [-60, 9], [-52, 5], [-44, -2], [-38, -5],
+                [-35, -7], [-35, -12], [-38, -18], [-42, -23], [-48, -28], [-53, -33], [-58, -35],
+                [-65, -42], [-66, -47], [-68, -54], [-73, -53], [-75, -48], [-73, -40], [-72, -30],
+                [-76, -20], [-80, -10], [-81, -5], [-80, 0], [-78, 4], [-77, 8]
+            ]);
+
+            // ==========================================
+            // 【五、大洋洲与澳大利亚 (Australia & Oceania)】
+            // ==========================================
+            drawPoly([
+                [114, -22], [118, -20], [124, -16], [130, -13], [136, -12], [142, -11], [144, -14],
+                [141, -17], [137, -15], [136, -13], [138, -12], [139, -17], [146, -19], [150, -23],
+                [153, -28], [153, -32], [150, -37], [146, -39], [141, -38], [138, -36], [134, -33],
+                [128, -32], [121, -34], [115, -34], [115, -29], [113, -25], [114, -22]
+            ]);
+
+            // 塔斯马尼亚岛
+            drawPoly([[145, -41], [148, -41], [148, -43], [145, -43], [145, -41]]);
+            // 新几内亚岛
+            drawPoly([[131, -1], [141, -3], [150, -10], [143, -9], [135, -5], [131, -1]]);
+            // 新西兰 (北岛与南岛)
+            drawPoly([[173, -35], [178, -38], [175, -41], [174, -38], [173, -35]]);
+            drawPoly([[173, -41], [174, -43], [170, -46], [167, -46], [169, -43], [173, -41]]);
+
+            // ==========================================
+            // 【六、南极洲 (Antarctica Mainland & Peninsula)】
+            // ==========================================
+            drawPoly([
+                [-60, -64], [-56, -67], [-60, -71], [-70, -74], [-80, -73], [-90, -72], [-100, -72],
+                [-120, -74], [-140, -75], [-160, -78], [-180, -78], [180, -78], [165, -73], [150, -68],
+                [140, -66], [120, -66], [100, -66], [80, -67], [60, -67], [40, -69], [20, -70],
+                [0, -70], [-20, -72], [-40, -76], [-55, -74], [-60, -64]
+            ]);
+
+            return ctx.getImageData(0, 0, 1024, 512);
+        }
+
+        // 4. 全球人类分布密度模型与发光粒子地球系统构建
+        // 全球人类主要高密度都会群与人口密集平原地理特征坐标库 (Major Global Population Megalopolises)
+        const POPULATION_CENTERS = [
+            // 东亚 (超高密度核心：长三角、京津冀、大湾区、成渝、关东近畿、首尔圈、台湾)
+            { name: "China-East-Shanghai", lat: 31.5, lon: 120.5, radius: 7.0, weight: 1.0 },
+            { name: "China-North-Beijing", lat: 38.5, lon: 116.5, radius: 6.5, weight: 1.0 },
+            { name: "China-South-GBA", lat: 23.2, lon: 113.5, radius: 5.5, weight: 1.0 },
+            { name: "China-Sichuan-Chengdu", lat: 30.5, lon: 104.5, radius: 4.8, weight: 0.95 },
+            { name: "China-Central-Wuhan", lat: 31.5, lon: 114.2, radius: 6.0, weight: 0.92 },
+            { name: "Japan-Tokyo-Osaka", lat: 35.5, lon: 138.0, radius: 6.5, weight: 1.0 },
+            { name: "Korea-Seoul", lat: 37.5, lon: 127.0, radius: 4.0, weight: 0.95 },
+            { name: "Taiwan-Taipei-Kaohsiung", lat: 24.0, lon: 121.0, radius: 3.0, weight: 0.92 },
+
+            // 南亚 (超高密度区：恒河平原、孟加拉国、西海岸孟买、南印度科技带、印度河流域)
+            { name: "India-Delhi-Punjab", lat: 28.6, lon: 77.2, radius: 6.5, weight: 1.0 },
+            { name: "India-Gangetic-Bihar", lat: 25.5, lon: 85.0, radius: 8.0, weight: 1.0 },
+            { name: "Bangladesh-Dhaka", lat: 24.0, lon: 90.0, radius: 4.5, weight: 1.0 },
+            { name: "India-Mumbai-Pune", lat: 19.0, lon: 73.5, radius: 5.5, weight: 0.96 },
+            { name: "India-South-Bangalore", lat: 13.0, lon: 78.5, radius: 6.5, weight: 0.95 },
+            { name: "Pakistan-Indus-Lahore", lat: 30.0, lon: 71.5, radius: 6.0, weight: 0.88 },
+
+            // 欧洲 (高密度核心带：莱茵-鲁尔蓝香蕉、大伦敦、巴黎圈、波河平原、中欧、莫斯科)
+            { name: "Europe-RhineRuhr-Benelux", lat: 51.0, lon: 6.5, radius: 7.0, weight: 1.0 },
+            { name: "UK-London", lat: 51.8, lon: -0.5, radius: 4.5, weight: 0.96 },
+            { name: "France-Paris", lat: 48.8, lon: 2.3, radius: 4.0, weight: 0.95 },
+            { name: "Italy-PoValley-Milan", lat: 45.5, lon: 10.0, radius: 4.5, weight: 0.92 },
+            { name: "Europe-Central-Berlin", lat: 52.0, lon: 18.0, radius: 6.5, weight: 0.82 },
+            { name: "Russia-Moscow", lat: 55.8, lon: 37.6, radius: 4.5, weight: 0.85 },
+            { name: "Spain-Madrid-Barcelona", lat: 41.0, lon: 1.0, radius: 5.5, weight: 0.82 },
+
+            // 北美洲 (人口与城市群：波士顿-华盛顿走廊、五大湖、加州双核、德州三角、佛州、墨西哥城)
+            { name: "US-BosWash", lat: 40.5, lon: -74.5, radius: 6.5, weight: 1.0 },
+            { name: "US-GreatLakes-Chicago", lat: 42.5, lon: -83.5, radius: 6.0, weight: 0.88 },
+            { name: "US-California-LA-SF", lat: 35.0, lon: -119.0, radius: 6.0, weight: 0.92 },
+            { name: "US-Texas-Triangle", lat: 30.5, lon: -97.0, radius: 5.5, weight: 0.82 },
+            { name: "US-Florida", lat: 27.8, lon: -81.5, radius: 4.5, weight: 0.82 },
+            { name: "Mexico-Central-CDMX", lat: 19.5, lon: -99.0, radius: 5.5, weight: 0.95 },
+
+            // 东南亚 (爪哇岛、红河/湄公河三角洲、吕宋岛、曼谷)
+            { name: "Java-Indonesia", lat: -7.2, lon: 110.5, radius: 5.5, weight: 1.0 },
+            { name: "Vietnam-Deltas", lat: 16.0, lon: 107.5, radius: 6.5, weight: 0.85 },
+            { name: "Philippines-Luzon-Manila", lat: 14.8, lon: 121.0, radius: 4.5, weight: 0.9 },
+            { name: "Thailand-Bangkok", lat: 14.0, lon: 100.5, radius: 4.5, weight: 0.85 },
+
+            // 非洲 (尼罗河谷三角洲、尼日利亚沿海、东非大湖高原、南非约翰内斯堡)
+            { name: "Egypt-Nile-Cairo", lat: 30.0, lon: 31.2, radius: 4.0, weight: 1.0 },
+            { name: "Nigeria-Coast-Lagos", lat: 6.8, lon: 4.5, radius: 5.5, weight: 0.95 },
+            { name: "EastAfrica-Highlands", lat: 0.5, lon: 34.5, radius: 6.0, weight: 0.85 },
+            { name: "SouthAfrica-Gauteng", lat: -26.2, lon: 28.0, radius: 4.5, weight: 0.82 },
+
+            // 南美洲 (巴西东南圣保罗-里约、拉普拉塔布宜诺斯艾利斯、波哥大)
+            { name: "Brazil-Southeast-SP-Rio", lat: -23.0, lon: -45.0, radius: 6.0, weight: 0.95 },
+            { name: "Argentina-BuenosAires", lat: -34.6, lon: -58.4, radius: 4.5, weight: 0.85 },
+            { name: "Colombia-Bogota", lat: 4.7, lon: -74.0, radius: 4.0, weight: 0.82 },
+
+            // 中东与大洋洲 (波斯湾、地中海东岸、澳洲东南沿海悉尼-墨尔本)
+            { name: "MiddleEast-Gulf-Levant", lat: 28.0, lon: 48.0, radius: 6.5, weight: 0.80 },
+            { name: "Australia-Sydney-Melbourne", lat: -35.0, lon: 148.0, radius: 5.5, weight: 0.85 }
+        ];
+
+        // 高性能人类分布密度计算函数 (返回 0.0 ~ 1.0 密度系数)
+        function getHumanPopulationDensity(lat, lon) {
+            // 地球极端无人区与极低人口密度自然荒野压制 (Antarctica, Greenland, Deserts, Tundra, Rainforest)
+            if (lat < -60) return 0.005; // 南极大陆 (极度稀疏，近乎无人类灯光)
+            if (lat > 62 && lon > -55 && lon < -20) return 0.015; // 格陵兰内陆冰原
+            if (lat > 16 && lat < 28 && lon > -12 && lon < 28) return 0.025; // 撒哈拉大沙漠
+            if (lat > 28 && lat < 36 && lon > 78 && lon < 96) return 0.035; // 青藏高原高海拔无人区
+            if (lat > 58 && lon > 60 && lon < 165) return 0.04; // 西伯利亚极地冻土
+            if (lat > 56 && lon > -130 && lon < -65) return 0.04; // 加拿大北部极地苔原
+            if (lat > -32 && lat < -18 && lon > 116 && lon < 138) return 0.03; // 澳大利亚内陆红土荒漠
+            if (lat > -8 && lat < 2 && lon > -70 && lon < -55) return 0.05; // 亚马逊热带雨林腹地
+
+            const baseDensity = 0.16; // 普通宜居陆地基底密度
+            let maxInfluence = 0;
+
+            for (let i = 0; i < POPULATION_CENTERS.length; i++) {
+                const c = POPULATION_CENTERS[i];
+                const dLat = lat - c.lat;
+                const cosLat = Math.cos(lat * Math.PI / 180);
+                const dLon = (lon - c.lon) * cosLat;
+                const dist = Math.sqrt(dLat * dLat + dLon * dLon);
+                if (dist < c.radius * 2.2) {
+                    const inf = c.weight * Math.exp(-Math.pow(dist / c.radius, 2));
+                    if (inf > maxInfluence) maxInfluence = inf;
+                }
+            }
+
+            return Math.min(1.0, baseDensity + maxInfluence * (1.0 - baseDensity));
+        }
+
+        const earthRootGroup = new THREE.Group();
+        earthScene.add(earthRootGroup);
+
+        const earthRadius = 1.62;
+        const continentMask = createWorldContinentMask();
+        const maskData = continentMask.data;
+
+        // 斐波那契球面密集采样 (扩增至 28,000 点，由人类密度驱动接受率与微集群)
+        const totalSampleCount = 28000;
+        const earthParticlePositions = [];
+        const earthParticleColors = [];
+        const phiRatio = (1 + Math.sqrt(5)) / 2;
+
+        // 收集人类高密度枢纽点，用于生成地表外向辐射光针 (Spikes) 与地表连线弧 (Arcs)
+        const hubPoints = [];
+
+        for (let i = 0; i < totalSampleCount; i++) {
+            const y = 1 - (i / (totalSampleCount - 1)) * 2;
+            const radiusAtY = Math.sqrt(Math.max(0, 1 - y * y));
+            const theta = 2 * Math.PI * i / phiRatio;
+            const x = Math.cos(theta) * radiusAtY;
+            const z = Math.sin(theta) * radiusAtY;
+
+            // 球面坐标转经纬度与 UV
+            const lon = Math.atan2(x, z);
+            const lat = Math.asin(Math.max(-1, Math.min(1, y)));
+            const lonDeg = lon * 180 / Math.PI;
+            const latDeg = lat * 180 / Math.PI;
+
+            const u = (lon / (2 * Math.PI)) + 0.5;
+            const v = 0.5 - (lat / Math.PI);
+
+            const px = Math.min(1023, Math.max(0, Math.floor(u * 1023)));
+            const py = Math.min(511, Math.max(0, Math.floor(v * 511)));
+            const pIdx = (py * 1024 + px) * 4;
+
+            const isLand = maskData[pIdx] > 100;
+
+            if (isLand) {
+                const popDensity = getHumanPopulationDensity(latDeg, lonDeg);
+
+                // 人类分布密度过滤：密度越低光点越稀疏，高密度区 100% 保留并增生聚簇
+                let shouldPlot = true;
+                if (popDensity < 0.12) {
+                    shouldPlot = Math.random() < (popDensity * 2.2); // 极寒与荒漠保留率极低
+                } else if (popDensity < 0.35) {
+                    shouldPlot = Math.random() < (0.45 + popDensity * 0.8);
+                }
+
+                if (shouldPlot) {
+                    const elev = 1.0 + Math.random() * 0.012;
+                    const pos = new THREE.Vector3(x * earthRadius * elev, y * earthRadius * elev, z * earthRadius * elev);
+                    earthParticlePositions.push(pos.x, pos.y, pos.z);
+
+                    // 根据人类分布密度赋予对应色彩与亮度等级
+                    if (popDensity > 0.72) {
+                        // 超高密度大都会群 (东亚/南亚/欧洲/北美核心圈等)：超亮白炽核心 + 暖金城市夜景灯光
+                        if (Math.random() > 0.45) {
+                            earthParticleColors.push(1.0, 1.0, 1.0); // 白炽纯白
+                        } else {
+                            earthParticleColors.push(1.0, 0.94, 0.72); // 城市暖金
+                        }
+
+                        // 高密度都会群增生微聚簇光点，形成高光密集光斑
+                        const clusterCount = popDensity > 0.88 ? (Math.random() < 0.75 ? 2 : 1) : 1;
+                        for (let c = 0; c < clusterCount; c++) {
+                            const jx = (Math.random() - 0.5) * 0.012 * earthRadius;
+                            const jy = (Math.random() - 0.5) * 0.012 * earthRadius;
+                            const jz = (Math.random() - 0.5) * 0.012 * earthRadius;
+                            earthParticlePositions.push(pos.x + jx, pos.y + jy, pos.z + jz);
+                            earthParticleColors.push(1.0, 0.96, 0.82);
+                        }
+                    } else if (popDensity > 0.35) {
+                        // 中等密度宜居陆地：清冽冰蓝与纯净银白
+                        if (Math.random() > 0.5) {
+                            earthParticleColors.push(0.85, 0.94, 1.0); // 冰蓝高光
+                        } else {
+                            earthParticleColors.push(0.95, 0.98, 1.0); // 银白
+                        }
+                    } else {
+                        // 低密度原野/荒漠/极地：微弱幽蓝深空光
+                        earthParticleColors.push(0.35, 0.55, 0.82);
+                    }
+
+                    // 核心枢纽与大洲主要聚居区辐射光针 (Spikes) 大量生成向外辐射纯白光针群
+                    if (popDensity > 0.42 && Math.random() < (popDensity > 0.72 ? 0.32 : 0.16) && hubPoints.length < 520) {
+                        hubPoints.push(new THREE.Vector3(x, y, z));
+                    }
+                }
+            } else {
+                // 海洋稀疏幽蓝网格微粒
+                const isGridLine = Math.abs(lat % (Math.PI / 6)) < 0.02 || Math.abs(lon % (Math.PI / 6)) < 0.02;
+                if (isGridLine || Math.random() < 0.05) {
+                    const rSea = earthRadius * 0.994;
+                    earthParticlePositions.push(x * rSea, y * rSea, z * rSea);
+                    earthParticleColors.push(0.10, 0.22, 0.42);
+                }
+            }
+        }
+
+        const earthPointGeom = new THREE.BufferGeometry();
+        earthPointGeom.setAttribute('position', new THREE.Float32BufferAttribute(earthParticlePositions, 3));
+        earthPointGeom.setAttribute('color', new THREE.Float32BufferAttribute(earthParticleColors, 3));
+
+        const earthPointMat = new THREE.PointsMaterial({
+            size: 0.082,
+            map: glowPointTex,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.96,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const earthParticles = new THREE.Points(earthPointGeom, earthPointMat);
+        earthRootGroup.add(earthParticles);
+
+        // 内部纯黑遮挡球体 (屏蔽背面杂光，确保正面立体分明与纯黑通透)
+        const darkCoreGeom = new THREE.SphereGeometry(earthRadius * 0.996, 64, 64);
+        const darkCoreMat = new THREE.MeshBasicMaterial({
+            color: 0x000000
+        });
+        const darkCoreMesh = new THREE.Mesh(darkCoreGeom, darkCoreMat);
+        earthRootGroup.add(darkCoreMesh);
+
+        // ----------------------------------------------------
+        // 4. 全球灵动“流萤微光”粒子系统 (Global Bioluminescent Fireflies System)
+        // 海洋适度减密（空灵通透），各大洲陆野散布流萤（林间夜光），呈现自然呼吸闪烁与轻柔浮游
+        // ----------------------------------------------------
+        let oceanFireflyMat = null;
+        let oceanFirefliesMesh = null;
+
+        {
+            const fireflyPositions = [];
+            const fireflyColors = [];
+            const fireflyPhases = [];
+            const fireflySpeeds = [];
+            const fireflySizes = [];
+
+            let spawnedOcean = 0;
+            let spawnedLand = 0;
+            const targetOcean = 1350; // 海洋光点减至约1350颗，更显空灵开阔
+            const targetLand = 1150;  // 陆地新增散布约1150颗，如草野林间流萤
+            let attempts = 0;
+
+            while ((spawnedOcean < targetOcean || spawnedLand < targetLand) && attempts < 35000) {
+                attempts++;
+                const y = (Math.random() * 2) - 1;
+                const rCircle = Math.sqrt(Math.max(0, 1 - y * y));
+                const theta = Math.random() * Math.PI * 2;
+                const x = Math.cos(theta) * rCircle;
+                const z = Math.sin(theta) * rCircle;
+
+                const lon = Math.atan2(x, z);
+                const lat = Math.asin(Math.max(-1, Math.min(1, y)));
+                const u = (lon / (2 * Math.PI)) + 0.5;
+                const v = 0.5 - (lat / Math.PI);
+
+                const px = Math.min(1023, Math.max(0, Math.floor(u * 1023)));
+                const py = Math.min(511, Math.max(0, Math.floor(v * 511)));
+                const pIdx = (py * 1024 + px) * 4;
+
+                const isLand = maskData[pIdx] > 80;
+
+                let shouldSpawn = false;
+                let isOceanType = false;
+
+                if (!isLand && spawnedOcean < targetOcean) {
+                    shouldSpawn = true;
+                    isOceanType = true;
+                } else if (isLand && spawnedLand < targetLand) {
+                    shouldSpawn = true;
+                    isOceanType = false;
+                }
+
+                if (shouldSpawn) {
+                    if (isOceanType) spawnedOcean++;
+                    else spawnedLand++;
+
+                    // 空间立体高度：
+                    // 海洋：贴近波浪或悬浮于微海平面上方 (0.998 ~ 1.026)
+                    // 陆地：飘舞于陆表上空，宛如夏夜林野草甸流萤 (1.006 ~ 1.034)
+                    const elev = isOceanType
+                        ? (Math.random() < 0.65 ? (0.998 + Math.random() * 0.006) : (1.008 + Math.random() * 0.018))
+                        : (1.006 + Math.random() * 0.026);
+
+                    fireflyPositions.push(x * earthRadius * elev, y * earthRadius * elev, z * earthRadius * elev);
+
+                    // 灵动色彩设计：
+                    // 海洋：荧光青翠、冰蓝水色、偶见金色与钻白
+                    // 陆地：经典夏夜草甸柠檬金绿、暖金、翡翠青绿、纯白天狼星白
+                    const colRand = Math.random();
+                    if (isOceanType) {
+                        if (colRand < 0.42) {
+                            fireflyColors.push(0.28, 1.0, 0.82); // 海萤幽青
+                        } else if (colRand < 0.72) {
+                            fireflyColors.push(0.35, 0.88, 1.0); // 电光水蓝
+                        } else if (colRand < 0.90) {
+                            fireflyColors.push(0.98, 0.95, 0.45); // 夏夜暖金
+                        } else {
+                            fireflyColors.push(1.0, 1.0, 1.0); // 晶莹纯白
+                        }
+                    } else {
+                        // 陆地流萤
+                        if (colRand < 0.45) {
+                            fireflyColors.push(0.85, 1.0, 0.32); // 经典草野荧光青金
+                        } else if (colRand < 0.75) {
+                            fireflyColors.push(1.0, 0.92, 0.45); // 暖金流萤
+                        } else if (colRand < 0.90) {
+                            fireflyColors.push(0.38, 0.95, 0.85); // 灵动青翠
+                        } else {
+                            fireflyColors.push(1.0, 1.0, 1.0); // 纯白微芒
+                        }
+                    }
+
+                    fireflyPhases.push(Math.random() * Math.PI * 2);
+                    fireflySpeeds.push(0.85 + Math.random() * 1.6);
+                    fireflySizes.push(isOceanType ? (0.18 + Math.random() * 0.22) : (0.17 + Math.random() * 0.21));
+                }
+            }
+
+            const fireflyGeom = new THREE.BufferGeometry();
+            fireflyGeom.setAttribute('position', new THREE.Float32BufferAttribute(fireflyPositions, 3));
+            fireflyGeom.setAttribute('aColor', new THREE.Float32BufferAttribute(fireflyColors, 3));
+            fireflyGeom.setAttribute('aPhase', new THREE.Float32BufferAttribute(fireflyPhases, 1));
+            fireflyGeom.setAttribute('aSpeed', new THREE.Float32BufferAttribute(fireflySpeeds, 1));
+            fireflyGeom.setAttribute('aSize', new THREE.Float32BufferAttribute(fireflySizes, 1));
+
+            oceanFireflyMat = new THREE.ShaderMaterial({
+                uniforms: {
+                    uTime: { value: 0 },
+                    uTexture: { value: fireflyPointTex }
+                },
+                vertexShader: `
+                    uniform float uTime;
+                    attribute float aPhase;
+                    attribute float aSpeed;
+                    attribute float aSize;
+                    attribute vec3 aColor;
+                    varying vec3 vColor;
+                    varying float vAlpha;
+
+                    void main() {
+                        vColor = aColor;
+
+                        // 萤火虫在海面轻柔浮动漂移与起伏
+                        float wave = sin(uTime * aSpeed + aPhase);
+                        float wave2 = cos(uTime * aSpeed * 0.73 + aPhase * 1.35);
+                        vec3 displaced = position + normalize(position) * (wave * 0.015 + wave2 * 0.008);
+
+                        // 洋流切向微流漂动
+                        vec3 upVec = abs(position.y) > 0.92 * length(position) ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 1.0, 0.0);
+                        vec3 tangent = normalize(cross(position, upVec));
+                        displaced += tangent * (sin(uTime * 0.45 + aPhase) * 0.014);
+
+                        // 真实萤火虫的脉冲呼吸闪烁 (非线性平滑过渡，时亮时暗)
+                        float pulse = sin(uTime * aSpeed * 2.3 + aPhase);
+                        float blink = smoothstep(-0.35, 0.75, pulse);
+                        vAlpha = 0.22 + 0.78 * blink;
+
+                        vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
+                        gl_PointSize = (aSize * (0.75 + 0.65 * blink)) * (200.0 / -mvPosition.z);
+                        gl_PointSize = clamp(gl_PointSize, 3.5, 38.0);
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    uniform sampler2D uTexture;
+                    varying vec3 vColor;
+                    varying float vAlpha;
+
+                    void main() {
+                        vec4 texColor = texture2D(uTexture, gl_PointCoord);
+                        gl_FragColor = vec4(vColor * texColor.rgb, texColor.a * vAlpha);
+                    }
+                `,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                depthTest: true
+            });
+
+            oceanFirefliesMesh = new THREE.Points(fireflyGeom, oceanFireflyMat);
+            earthRootGroup.add(oceanFirefliesMesh);
+        }
+
+        // 5. 地表发光大圆枢纽点 (Surface Luminous Hubs - 参考图中的明亮白点)
+        const hubNodePositions = [];
+        const hubNodeColors = [];
+        hubPoints.forEach((p, idx) => {
+            if (idx < 160 || idx % 3 === 0) {
+                const r = earthRadius * 1.015;
+                hubNodePositions.push(p.x * r, p.y * r, p.z * r);
+                hubNodeColors.push(1.0, 1.0, 1.0);
+            }
+        });
+        const hubGeom = new THREE.BufferGeometry();
+        hubGeom.setAttribute('position', new THREE.Float32BufferAttribute(hubNodePositions, 3));
+        hubGeom.setAttribute('color', new THREE.Float32BufferAttribute(hubNodeColors, 3));
+        const hubMat = new THREE.PointsMaterial({
+            size: 0.16,
+            map: hubPointTex,
+            vertexColors: true,
+            transparent: true,
+            opacity: 1.0,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const hubMesh = new THREE.Points(hubGeom, hubMat);
+        earthRootGroup.add(hubMesh);
+
+        // 6. 地表垂直向外辐射纯白光针群 (Radially Extruded Pure White Spikes / Pins - 刺出的白色光针加多至500+根)
+        const spikeLinePositions = [];
+        const spikeLineColors = [];
+        const spikeTipPositions = [];
+
+        hubPoints.forEach(p => {
+            const spikeLen = 0.08 + Math.random() * 0.28;
+            const pBase = p.clone().multiplyScalar(earthRadius * 1.008);
+            const pTip = p.clone().multiplyScalar(earthRadius * (1.008 + spikeLen));
+
+            // 光针线段
+            spikeLinePositions.push(pBase.x, pBase.y, pBase.z);
+            spikeLinePositions.push(pTip.x, pTip.y, pTip.z);
+
+            // 根部到尖端均为纯净高亮白炽银白色光针
+            spikeLineColors.push(0.92, 0.96, 1.0);
+            spikeLineColors.push(1.0, 1.0, 1.0);
+
+            // 尖端高能发光微粒
+            spikeTipPositions.push(pTip.x, pTip.y, pTip.z);
+        });
+
+        const spikeLineGeom = new THREE.BufferGeometry();
+        spikeLineGeom.setAttribute('position', new THREE.Float32BufferAttribute(spikeLinePositions, 3));
+        spikeLineGeom.setAttribute('color', new THREE.Float32BufferAttribute(spikeLineColors, 3));
+        const spikeLineMat = new THREE.LineBasicMaterial({
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.92,
+            linewidth: 1.5,
+            blending: THREE.AdditiveBlending
+        });
+        const spikeLines = new THREE.LineSegments(spikeLineGeom, spikeLineMat);
+        earthRootGroup.add(spikeLines);
+
+        // 光针尖端纯白高亮发光微粒
+        const spikeTipGeom = new THREE.BufferGeometry();
+        spikeTipGeom.setAttribute('position', new THREE.Float32BufferAttribute(spikeTipPositions, 3));
+        const spikeTipMat = new THREE.PointsMaterial({
+            size: 0.095,
+            map: glowPointTex,
+            color: 0xffffff,
+            transparent: true,
+            opacity: 1.0,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const spikeTips = new THREE.Points(spikeTipGeom, spikeTipMat);
+        earthRootGroup.add(spikeTips);
+
+        // 7. 地表大圆连接弧线 (Great-Circle Network Arcs)
+        const arcGroup = new THREE.Group();
+        earthRootGroup.add(arcGroup);
+        const arcCount = Math.min(22, hubPoints.length - 1);
+        for (let i = 0; i < arcCount; i++) {
+            const p1 = hubPoints[i].clone().multiplyScalar(earthRadius);
+            const p2 = hubPoints[(i + 5) % hubPoints.length].clone().multiplyScalar(earthRadius);
+            const mid = p1.clone().add(p2).multiplyScalar(0.5);
+            mid.normalize().multiplyScalar(earthRadius * (1.12 + Math.random() * 0.12));
+
+            const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
+            const pts = curve.getPoints(24);
+            const arcGeom = new THREE.BufferGeometry().setFromPoints(pts);
+            const arcMat = new THREE.LineBasicMaterial({
+                color: 0x93c5fd,
+                transparent: true,
+                opacity: 0.35,
+                blending: THREE.AdditiveBlending
+            });
+            arcGroup.add(new THREE.Line(arcGeom, arcMat));
+        }
+
+        // 8. 多层交叉不同倾角发光粒子光环 (参考图中的香槟金环与银蓝环)
+        // A 环：香槟金/古铜微粒轨道环 (Warm Bronze/Gold Particle Belt)
+        const beltGoldGroup = new THREE.Group();
+        beltGoldGroup.rotation.x = 0.58;
+        beltGoldGroup.rotation.z = 0.38;
+        earthRootGroup.add(beltGoldGroup);
+
+        const goldBeltCount = 420;
+        const goldBeltPositions = [];
+        const goldBeltColors = [];
+        for (let i = 0; i < goldBeltCount; i++) {
+            const a = (i / goldBeltCount) * Math.PI * 2;
+            const rJitter = 2.45 + (Math.random() - 0.5) * 0.18;
+            goldBeltPositions.push(Math.cos(a) * rJitter, (Math.random() - 0.5) * 0.08, Math.sin(a) * rJitter);
+            goldBeltColors.push(1.0, 0.82, 0.45); // 闪烁香槟金
+        }
+        const goldBeltGeom = new THREE.BufferGeometry();
+        goldBeltGeom.setAttribute('position', new THREE.Float32BufferAttribute(goldBeltPositions, 3));
+        goldBeltGeom.setAttribute('color', new THREE.Float32BufferAttribute(goldBeltColors, 3));
+        const goldBeltMat = new THREE.PointsMaterial({
+            size: 0.065,
+            map: goldPointTex,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.72,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const goldBelt = new THREE.Points(goldBeltGeom, goldBeltMat);
+        beltGoldGroup.add(goldBelt);
+
+        // B 环：银白/冰蓝次级轨道微粒环 (Silver-Cyan Belt)
+        const beltSilverGroup = new THREE.Group();
+        beltSilverGroup.rotation.x = -0.42;
+        beltSilverGroup.rotation.z = -0.32;
+        earthRootGroup.add(beltSilverGroup);
+
+        const silverBeltCount = 400;
+        const silverBeltPositions = [];
+        for (let i = 0; i < silverBeltCount; i++) {
+            const a = (i / silverBeltCount) * Math.PI * 2;
+            const rJitter = 2.62 + (Math.random() - 0.5) * 0.16;
+            silverBeltPositions.push(Math.cos(a) * rJitter, (Math.random() - 0.5) * 0.08, Math.sin(a) * rJitter);
+        }
+        const silverBeltGeom = new THREE.BufferGeometry();
+        silverBeltGeom.setAttribute('position', new THREE.Float32BufferAttribute(silverBeltPositions, 3));
+        const silverBeltMat = new THREE.PointsMaterial({
+            size: 0.06,
+            map: glowPointTex,
+            color: 0xbae6fd,
+            transparent: true,
+            opacity: 0.65,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const silverBelt = new THREE.Points(silverBeltGeom, silverBeltMat);
+        beltSilverGroup.add(silverBelt);
+
+        // C 环：主航天粒子卫星轨道 (Main Satellite Orbit Belt carrying interactive nodes)
+        const orbitRadius = 2.55;
+        const orbitGroup = new THREE.Group();
+        orbitGroup.rotation.x = 0.42;
+        orbitGroup.rotation.z = -0.18;
+        earthRootGroup.add(orbitGroup);
+
+        const mainOrbitCount = 200;
+        const mainOrbitPositions = [];
+        for (let i = 0; i < mainOrbitCount; i++) {
+            const a = (i / mainOrbitCount) * Math.PI * 2;
+            mainOrbitPositions.push(Math.cos(a) * orbitRadius, 0, Math.sin(a) * orbitRadius);
+        }
+        const mainOrbitGeom = new THREE.BufferGeometry();
+        mainOrbitGeom.setAttribute('position', new THREE.Float32BufferAttribute(mainOrbitPositions, 3));
+        const mainOrbitMat = new THREE.PointsMaterial({
+            size: 0.055,
+            map: glowPointTex,
+            color: 0x93c5fd,
+            transparent: true,
+            opacity: 0.5,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const mainOrbitParticles = new THREE.Points(mainOrbitGeom, mainOrbitMat);
+        orbitGroup.add(mainOrbitParticles);
+
+        // 9. 构造纯粒子发光卫星系统 (Particle Satellites Nodes)
+        const nodeCount = 4;
+        const orbitNodes = [];
+        const satelliteParticleControllers = [];
+
+        function createSingleParticleSatellite() {
+            const satGroup = new THREE.Group();
+
+            // 中心超高能白炽聚能粒子
+            const coreGeom = new THREE.BufferGeometry();
+            coreGeom.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0], 3));
+            const coreMat = new THREE.PointsMaterial({
+                size: 0.38,
+                map: hubPointTex,
+                transparent: true,
+                opacity: 1.0,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const corePoint = new THREE.Points(coreGeom, coreMat);
+            satGroup.add(corePoint);
+
+            // 卫星主体微星团 (24 颗高亮微粒)
+            const bodyPositions = [];
+            for (let i = 0; i < 24; i++) {
+                bodyPositions.push(
+                    (Math.random() - 0.5) * 0.22,
+                    (Math.random() - 0.5) * 0.08,
+                    (Math.random() - 0.5) * 0.08
+                );
+            }
+            const bodyGeom = new THREE.BufferGeometry();
+            bodyGeom.setAttribute('position', new THREE.Float32BufferAttribute(bodyPositions, 3));
+            const bodyMat = new THREE.PointsMaterial({
+                size: 0.085,
+                map: glowPointTex,
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.95,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const bodyParticles = new THREE.Points(bodyGeom, bodyMat);
+            satGroup.add(bodyParticles);
+
+            // 卫星自旋粒子光圈 (20 颗冰蓝环形微粒)
+            const ringGroup = new THREE.Group();
+            const ringPositions = [];
+            const ringCount = 20;
+            const ringR = 0.16;
+            for (let i = 0; i < ringCount; i++) {
+                const a = (i / ringCount) * Math.PI * 2;
+                ringPositions.push(Math.cos(a) * ringR, 0, Math.sin(a) * ringR);
+            }
+            const ringGeom = new THREE.BufferGeometry();
+            ringGeom.setAttribute('position', new THREE.Float32BufferAttribute(ringPositions, 3));
+            const ringMat = new THREE.PointsMaterial({
+                size: 0.075,
+                map: glowPointTex,
+                color: 0x93c5fd,
+                transparent: true,
+                opacity: 0.85,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const ringParticles = new THREE.Points(ringGeom, ringMat);
+            ringGroup.add(ringParticles);
+            ringGroup.rotation.x = Math.PI / 4;
+            satGroup.add(ringGroup);
+
+            return {
+                group: satGroup,
+                core: corePoint,
+                body: bodyParticles,
+                ring: ringGroup
+            };
+        }
+
+        for (let i = 0; i < nodeCount; i++) {
+            const angle = (i / nodeCount) * Math.PI * 2;
+            const satController = createSingleParticleSatellite();
+            satController.group.position.x = Math.cos(angle) * orbitRadius;
+            satController.group.position.z = Math.sin(angle) * orbitRadius;
+            satController.group.position.y = 0;
+
+            orbitGroup.add(satController.group);
+            satelliteParticleControllers.push(satController);
+
+            const badgeDom = document.getElementById(`node-badge-${i}`);
+            orbitNodes.push({
+                index: i,
+                angle: angle,
+                mesh: satController.group,
+                controller: satController,
+                dom: badgeDom,
+                screenPos: new THREE.Vector2(),
+                visible: true
+            });
+        }
+
+        // ----------------------------------------------------
+        // 鼠标拖拽地球与平滑惯性阻尼旋转逻辑
+        // ----------------------------------------------------
+        let isDraggingGlobe = false;
+        let lastPointerX = 0;
+        let lastPointerY = 0;
+        let rotSpeedX = 0;
+        let rotSpeedY = 0;
+        let targetRotY = 0.6;
+        let targetRotX = 0.15;
+        let currentRotY = 0.6;
+        let currentRotX = 0.15;
+
+        spaceViewport.addEventListener('pointerdown', (e) => {
+            // 点击如果发生在弹窗或卡片上则不触发拖拽
+            if (e.target.closest('.space-modal-card') || e.target.closest('.orbit-badge-card')) return;
+            isDraggingGlobe = true;
+            lastPointerX = e.clientX;
+            lastPointerY = e.clientY;
+            rotSpeedX = 0;
+            rotSpeedY = 0;
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!isDraggingGlobe) return;
+            const dx = e.clientX - lastPointerX;
+            const dy = e.clientY - lastPointerY;
+            lastPointerX = e.clientX;
+            lastPointerY = e.clientY;
+
+            rotSpeedY = dx * 0.005;
+            rotSpeedX = dy * 0.005;
+
+            targetRotY += rotSpeedY;
+            targetRotX += rotSpeedX;
+
+            // 限制俯仰角，避免翻转倒置
+            targetRotX = Math.max(-0.65, Math.min(0.65, targetRotX));
+        });
+
+        window.addEventListener('pointerup', () => {
+            isDraggingGlobe = false;
+        });
+
+        // ----------------------------------------------------
+        // 3D 坐标投影到 2D 屏幕并精确计算与地球的遮挡/被遮挡物理关系
+        // ----------------------------------------------------
+        const tempVec3 = new THREE.Vector3();
+        const nodeWorldPos = new THREE.Vector3();
+        const rayToNode = new THREE.Vector3();
+        const toEarthCenter = new THREE.Vector3();
+
+        // 射线-球面求交算法：计算从相机到目标节点的视线是否被地球球体遮挡
+        function calculateEarthOcclusion(worldPos, camera, earthCenter, radius) {
+            rayToNode.subVectors(worldPos, camera.position);
+            const distToNode = rayToNode.length();
+            const rayDir = rayToNode.normalize();
+
+            toEarthCenter.subVectors(earthCenter, camera.position);
+            const tProj = toEarthCenter.dot(rayDir);
+
+            // 若节点在地球中心平面的靠近摄像机一侧，则在地球前表面，完全无遮挡 (1.0)
+            if (tProj <= 0 || tProj >= distToNode) {
+                return 1.0;
+            }
+
+            // 计算视线射线到地球球心的垂直距离
+            const d2 = toEarthCenter.lengthSq() - tProj * tProj;
+            const d = Math.sqrt(Math.max(0, d2));
+
+            const rInner = radius - 0.14;
+            const rOuter = radius + 0.14;
+
+            if (d <= rInner) {
+                return 0.0; // 视线穿过地球实心球体：完全被地球遮挡
+            } else if (d >= rOuter) {
+                return 1.0; // 视线在地球轮廓外侧太空：完全可见
+            } else {
+                // 地平线掠射边缘平滑渐变
+                return (d - rInner) / (rOuter - rInner);
+            }
+        }
+
+        function updateProjectedBadges() {
+            orbitNodes.forEach((node) => {
+                node.mesh.getWorldPosition(nodeWorldPos);
+                tempVec3.copy(nodeWorldPos);
+
+                // 精确计算遮挡因子：0 为完全被地球遮挡，1 为完全可见（位于地球前方时遮挡地球表面）
+                const visibility = calculateEarthOcclusion(
+                    nodeWorldPos,
+                    earthCamera,
+                    earthRootGroup.position,
+                    earthRadius * 1.02
+                );
+
+                // 投影到屏幕 2D 视口坐标
+                tempVec3.project(earthCamera);
+
+                const halfW = window.innerWidth / 2;
+                const halfH = window.innerHeight / 2;
+                const screenX = (tempVec3.x * halfW) + halfW;
+                const screenY = -(tempVec3.y * halfH) + halfH;
+
+                if (node.dom) {
+                    if (visibility <= 0.02) {
+                        // 【被地球遮挡】：完全隐去、禁用交互，处于地球球体后方
+                        node.dom.style.opacity = '0';
+                        node.dom.style.visibility = 'hidden';
+                        node.dom.style.pointerEvents = 'none';
+                        node.dom.style.transform = 'translate(' + screenX + 'px, ' + screenY + 'px) translate(-50%, -50%) scale(0.35)';
+                        node.dom.style.zIndex = '1';
+                    } else {
+                        // 【在地球前方 / 太空中未被遮挡】：完全显示，图标浮于地球前表面，遮挡其背后的地表
+                        node.dom.style.opacity = visibility.toFixed(3);
+                        node.dom.style.visibility = 'visible';
+                        node.dom.style.pointerEvents = visibility > 0.4 ? 'auto' : 'none';
+                        const scale = (0.5 + 0.5 * visibility).toFixed(3);
+                        node.dom.style.transform = 'translate(' + screenX + 'px, ' + screenY + 'px) translate(-50%, -50%) scale(' + scale + ')';
+                        node.dom.style.zIndex = visibility > 0.8 ? '15' : '8';
+                    }
+                }
+            });
+        }
+
+        // ----------------------------------------------------
+        // 古典淡绿塔罗动态背景引擎 (Celestial Astrolabe & Classical Stardust)
+        // ----------------------------------------------------
+        const tarotCanvas = document.getElementById('tarotBgCanvas');
+        const tarotCtx = tarotCanvas ? tarotCanvas.getContext('2d') : null;
+        let tarotAnimId = null;
+        let tarotClock = 0;
+
+        // 36 颗古典星尘微粒，缓动上浮
+        const tarotMotes = [];
+        for (let i = 0; i < 36; i++) {
+            tarotMotes.push({
+                x: Math.random(),
+                y: Math.random(),
+                speedY: 0.0003 + Math.random() * 0.0006,
+                speedX: (Math.random() - 0.5) * 0.0004,
+                radius: 0.8 + Math.random() * 1.6,
+                alpha: 0.25 + Math.random() * 0.45,
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+
+        function renderTarotBg() {
+            if (!spaceModalStage || !spaceModalStage.classList.contains('active')) return;
+            if (!tarotCanvas || !tarotCtx) return;
+
+            tarotClock += 0.008;
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+            if (tarotCanvas.width !== Math.floor(w * dpr) || tarotCanvas.height !== Math.floor(h * dpr)) {
+                tarotCanvas.width = Math.floor(w * dpr);
+                tarotCanvas.height = Math.floor(h * dpr);
+            }
+
+            tarotCtx.setTransform(1, 0, 0, 1, 0, 0);
+            tarotCtx.scale(dpr, dpr);
+
+            const cx = w / 2;
+            const cy = h / 2;
+            const maxR = Math.hypot(w, h) * 0.72;
+
+            // 1. 古典深浅流光水韵微晕 (缓动呼吸，极尽温润)
+            const gx = cx + Math.sin(tarotClock * 0.6) * (w * 0.14);
+            const gy = cy + Math.cos(tarotClock * 0.5) * (h * 0.14);
+
+            const bgGrad = tarotCtx.createRadialGradient(gx, gy, 40, cx, cy, maxR);
+            bgGrad.addColorStop(0, '#eaf4eb');     // 中心典雅温润浅绿
+            bgGrad.addColorStop(0.48, '#dbe7dc');  // 主色经典鼠尾草绿
+            bgGrad.addColorStop(0.85, '#cfded1');  // 舒缓苍翠瓷青
+            bgGrad.addColorStop(1, '#c2d6c5');     // 边沿古朴玉润绿
+            tarotCtx.fillStyle = bgGrad;
+            tarotCtx.fillRect(0, 0, w, h);
+
+            // 2. 古典浑天星盘旋转同心环 (Astrolabe Celestial Rings)
+            tarotCtx.save();
+            tarotCtx.translate(cx, cy);
+
+            const baseR = Math.min(w, h) * 0.40;
+
+            // A. 外层主星盘轨道环 (顺时针缓动自转)
+            tarotCtx.save();
+            tarotCtx.rotate(tarotClock * 0.09);
+
+            // 双层金线主环
+            tarotCtx.strokeStyle = 'rgba(216, 183, 107, 0.35)'; // 古典暗金
+            tarotCtx.lineWidth = 1.4;
+            tarotCtx.beginPath();
+            tarotCtx.arc(0, 0, baseR, 0, Math.PI * 2);
+            tarotCtx.stroke();
+
+            tarotCtx.strokeStyle = 'rgba(45, 100, 99, 0.28)';   // 塔罗墨绿
+            tarotCtx.lineWidth = 1.0;
+            tarotCtx.beginPath();
+            tarotCtx.arc(0, 0, baseR - 10, 0, Math.PI * 2);
+            tarotCtx.stroke();
+
+            // 24 刻度古典黄道星象刻度线
+            tarotCtx.strokeStyle = 'rgba(216, 183, 107, 0.32)';
+            tarotCtx.lineWidth = 1.2;
+            for (let i = 0; i < 24; i++) {
+                const angle = (i / 24) * Math.PI * 2;
+                const rInner = (i % 6 === 0) ? baseR - 16 : baseR - 8;
+                tarotCtx.beginPath();
+                tarotCtx.moveTo(Math.cos(angle) * rInner, Math.sin(angle) * rInner);
+                tarotCtx.lineTo(Math.cos(angle) * baseR, Math.sin(angle) * baseR);
+                tarotCtx.stroke();
+            }
+
+            // 四方位古典八角星芒点缀
+            tarotCtx.fillStyle = '#d8b76b';
+            for (let i = 0; i < 4; i++) {
+                const angle = (i / 4) * Math.PI * 2;
+                tarotCtx.beginPath();
+                tarotCtx.arc(Math.cos(angle) * (baseR - 5), Math.sin(angle) * (baseR - 5), 2.5, 0, Math.PI * 2);
+                tarotCtx.fill();
+            }
+            tarotCtx.restore();
+
+            // B. 中层倾斜天体赤道环 (逆时针差速回转)
+            tarotCtx.save();
+            tarotCtx.rotate(-tarotClock * 0.13);
+
+            const midR = baseR * 0.72;
+            tarotCtx.strokeStyle = 'rgba(216, 183, 107, 0.26)';
+            tarotCtx.lineWidth = 1.2;
+            tarotCtx.beginPath();
+            tarotCtx.arc(0, 0, midR, 0, Math.PI * 2);
+            tarotCtx.stroke();
+
+            // 倾斜浑天椭圆环 (经典塔罗星盘符号)
+            tarotCtx.strokeStyle = 'rgba(45, 100, 99, 0.22)';
+            tarotCtx.lineWidth = 1.2;
+            tarotCtx.beginPath();
+            tarotCtx.ellipse(0, 0, midR, midR * 0.36, Math.PI / 4, 0, Math.PI * 2);
+            tarotCtx.stroke();
+
+            tarotCtx.beginPath();
+            tarotCtx.ellipse(0, 0, midR, midR * 0.36, -Math.PI / 4, 0, Math.PI * 2);
+            tarotCtx.stroke();
+
+            // 虚线度盘
+            tarotCtx.setLineDash([3, 7]);
+            tarotCtx.strokeStyle = 'rgba(216, 183, 107, 0.28)';
+            tarotCtx.beginPath();
+            tarotCtx.arc(0, 0, midR - 8, 0, Math.PI * 2);
+            tarotCtx.stroke();
+            tarotCtx.setLineDash([]);
+            tarotCtx.restore();
+
+            // C. 核心神圣几何星芒 (顺时针微自转)
+            tarotCtx.save();
+            tarotCtx.rotate(tarotClock * 0.2);
+            const coreR = baseR * 0.38;
+            tarotCtx.strokeStyle = 'rgba(45, 100, 99, 0.25)';
+            tarotCtx.lineWidth = 1.0;
+
+            // 两个正方形交叉形成八芒星
+            tarotCtx.strokeRect(-coreR * 0.6, -coreR * 0.6, coreR * 1.2, coreR * 1.2);
+            tarotCtx.rotate(Math.PI / 4);
+            tarotCtx.strokeStyle = 'rgba(216, 183, 107, 0.25)';
+            tarotCtx.strokeRect(-coreR * 0.6, -coreR * 0.6, coreR * 1.2, coreR * 1.2);
+            tarotCtx.restore();
+
+            tarotCtx.restore();
+
+            // 3. 古典浮游金尘星点 (Stardust Motes)
+            for (let i = 0; i < tarotMotes.length; i++) {
+                const m = tarotMotes[i];
+                m.y -= m.speedY;
+                m.x += Math.sin(tarotClock * 1.5 + m.phase) * m.speedX;
+                if (m.y < 0) {
+                    m.y = 1;
+                    m.x = Math.random();
+                }
+
+                const px = m.x * w;
+                const py = m.y * h;
+                const pulse = 0.7 + Math.sin(tarotClock * 2 + m.phase) * 0.3;
+
+                tarotCtx.fillStyle = 'rgba(216, 183, 107, ' + (m.alpha * pulse).toFixed(3) + ')';
+                tarotCtx.beginPath();
+                tarotCtx.arc(px, py, m.radius, 0, Math.PI * 2);
+                tarotCtx.fill();
+            }
+
+            tarotAnimId = requestAnimationFrame(renderTarotBg);
+        }
+
+        function startTarotBg() {
+            cancelAnimationFrame(tarotAnimId);
+            tarotAnimId = requestAnimationFrame(renderTarotBg);
+        }
+
+        function stopTarotBg() {
+            cancelAnimationFrame(tarotAnimId);
+        }
+
+        // ----------------------------------------------------
+        // 全屏像素方块浮动重组入场动效 (Pixel Blocks Reconstitution)
+        // ----------------------------------------------------
+        const pixelCanvas = document.getElementById('pixelAssemblyCanvas');
+        const pixelCtx = pixelCanvas ? pixelCanvas.getContext('2d') : null;
+        const editorialContainer = document.getElementById('editorialContainer');
+
+        let pixelAnimFrameId = null;
+        let pixelBlocks = [];
+        let pixelStartTime = 0;
+
+        function triggerPixelAssembly(originX, originY) {
+            if (!pixelCanvas || !pixelCtx) return;
+
+            cancelAnimationFrame(pixelAnimFrameId);
+            pixelCanvas.style.opacity = '1';
+            pixelCanvas.style.display = 'block';
+
+            if (editorialContainer) {
+                editorialContainer.classList.remove('revealed');
+            }
+
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+            pixelCanvas.width = Math.floor(w * dpr);
+            pixelCanvas.height = Math.floor(h * dpr);
+            pixelCtx.setTransform(1, 0, 0, 1, 0, 0);
+            pixelCtx.scale(dpr, dpr);
+
+            const clickX = (typeof originX === 'number' && !isNaN(originX)) ? originX : w / 2;
+            const clickY = (typeof originY === 'number' && !isNaN(originY)) ? originY : h / 2;
+
+            // 方块尺寸：桌面端约 44px，移动端约 30px
+            const tileSize = w < 768 ? 30 : 44;
+            const cols = Math.ceil(w / tileSize);
+            const rows = Math.ceil(h / tileSize);
+
+            pixelBlocks = [];
+            const maxDist = Math.hypot(w, h) * 0.95;
+
+            // 塔罗典雅淡绿晶体色盘 (Pale Sage, Celadon, Linen Matcha Greens)
+            const palette = [
+                '#dbe7dc',
+                '#cbe0ce',
+                '#d4e5d6',
+                '#c2dbc4',
+                '#e2ede3',
+                '#bad6bd',
+                '#cfe2d2',
+                '#b2cfb6'
+            ];
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const targetX = c * tileSize;
+                    const targetY = r * tileSize;
+                    const cx = targetX + tileSize / 2;
+                    const cy = targetY + tileSize / 2;
+
+                    const dist = Math.hypot(cx - clickX, cy - clickY);
+                    const angle = Math.atan2(cy - clickY, cx - clickX) + (Math.random() - 0.5) * 0.9;
+                    const scatterDist = 80 + Math.random() * 320;
+
+                    pixelBlocks.push({
+                        targetX: targetX,
+                        targetY: targetY,
+                        w: tileSize,
+                        h: tileSize,
+                        startX: targetX + Math.cos(angle) * scatterDist,
+                        startY: targetY + Math.sin(angle) * scatterDist,
+                        startRot: (Math.random() - 0.5) * 1.6,
+                        startScale: 0.15 + Math.random() * 1.5,
+                        delay: (dist / maxDist) * 320 + Math.random() * 90,
+                        duration: 520 + Math.random() * 180,
+                        color: palette[Math.floor(Math.random() * palette.length)]
+                    });
+                }
+            }
+
+            pixelStartTime = performance.now();
+            let hasRevealedContent = false;
+
+            function renderPixelFrame(now) {
+                const elapsed = now - pixelStartTime;
+                pixelCtx.clearRect(0, 0, w, h);
+
+                let allFinished = true;
+
+                for (let i = 0; i < pixelBlocks.length; i++) {
+                    const b = pixelBlocks[i];
+                    if (elapsed < b.delay) {
+                        allFinished = false;
+                        continue;
+                    }
+
+                    const progressRaw = Math.min(1, (elapsed - b.delay) / b.duration);
+                    if (progressRaw < 1) {
+                        allFinished = false;
+                    }
+
+                    // 极致平滑自然的三次贝塞尔缓动 (Cubic Ease Out)
+                    const p = progressRaw;
+                    const ease = 1 - Math.pow(1 - p, 3.2);
+
+                    const curX = b.startX + (b.targetX - b.startX) * ease;
+                    const curY = b.startY + (b.targetY - b.startY) * ease;
+                    const curRot = b.startRot * (1 - ease);
+                    const curScale = b.startScale + (1.0 - b.startScale) * ease;
+
+                    pixelCtx.save();
+                    pixelCtx.translate(curX + b.w / 2, curY + b.h / 2);
+                    pixelCtx.rotate(curRot);
+                    pixelCtx.scale(curScale, curScale);
+
+                    if (ease < 0.92) {
+                        pixelCtx.fillStyle = b.color;
+                        pixelCtx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+                        pixelCtx.strokeStyle = 'rgba(216, 183, 107, ' + ((1 - ease) * 0.65 + 0.15).toFixed(3) + ')';
+                        pixelCtx.lineWidth = 1.2;
+                        pixelCtx.strokeRect(-b.w / 2, -b.h / 2, b.w, b.h);
+                    } else {
+                        // 组装闭合：严密无缝融合为淡绿塔罗画卷底面
+                        pixelCtx.fillStyle = '#dbe7dc';
+                        pixelCtx.fillRect(-b.w / 2, -b.h / 2, b.w + 0.6, b.h + 0.6);
+                    }
+
+                    pixelCtx.restore();
+                }
+
+                // 当像素方块聚拢进入尾声时，优雅浮显文字与页面内容
+                if (!hasRevealedContent && elapsed > 440) {
+                    hasRevealedContent = true;
+                    if (editorialContainer) {
+                        editorialContainer.classList.add('revealed');
+                    }
+                }
+
+                if (!allFinished) {
+                    pixelAnimFrameId = requestAnimationFrame(renderPixelFrame);
+                } else {
+                    // 全部重组完毕，淡出遮罩画布
+                    pixelCanvas.style.opacity = '0';
+                    setTimeout(() => {
+                        if (pixelCanvas && pixelCanvas.style.opacity === '0') {
+                            pixelCanvas.style.display = 'none';
+                        }
+                    }, 350);
+                }
+            }
+
+            pixelAnimFrameId = requestAnimationFrame(renderPixelFrame);
+        }
+
+        // ----------------------------------------------------
+        // 弹窗与图标点击响应 (单板块专属展示与典藏画卷)
+        // ----------------------------------------------------
+        const spaceModalStage = document.getElementById('spaceModalStage');
+        const spaceModalCloseBtn = document.getElementById('spaceModalCloseBtn');
+        const editorialItems = document.querySelectorAll('.editorial-item');
+
+        let currentSectionIndex = 0;
+
+        function showDossierSection(index) {
+            currentSectionIndex = index;
+
+            // 仅激活并展示当前点击的本板块内容，其他板块隐藏
+            editorialItems.forEach((item, idx) => {
+                if (idx === index) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            // 视口置顶
+            if (spaceModalStage) {
+                spaceModalStage.scrollTo({ top: 0, behavior: 'instant' });
+            }
+        }
+
+        // 全局暴露以供调用
+        window.showDossierSection = showDossierSection;
+        window.closeSpaceModal = closeSpaceModal;
+
+        function openSpaceModal(index, clickX, clickY) {
+            // 优雅平滑旋转地球，将点击的节点聚焦至视口前方
+            const node = orbitNodes[index];
+            if (node) {
+                targetRotY = -node.angle + 0.32;
+                targetRotX = 0.12;
+            }
+
+            // 切换为仅显示当前板块文字
+            showDossierSection(index);
+
+            // 展开全屏淡绿塔罗风格文字展陈并启动古典动态星盘
+            spaceModalStage.classList.add('active');
+            spaceModalStage.setAttribute('aria-hidden', 'false');
+            startTarotBg();
+
+            // 确保最下方地球小图标隐藏
+            const bottomNav = document.getElementById('bottomNav');
+            if (bottomNav) bottomNav.style.display = 'none';
+
+            // 启动全屏淡绿像素方块浮动重组动效
+            triggerPixelAssembly(clickX, clickY);
+        }
+
+        function closeSpaceModal() {
+            spaceModalStage.classList.remove('active');
+            spaceModalStage.setAttribute('aria-hidden', 'true');
+            if (editorialContainer) {
+                editorialContainer.classList.remove('revealed');
+            }
+            stopTarotBg();
+            cancelAnimationFrame(pixelAnimFrameId);
+            if (pixelCanvas) {
+                pixelCanvas.style.display = 'none';
+            }
+        }
+
+        // 点击轨道上的四个小图标，打开对应的单个专属文字板块 (传递点击坐标引导像素波纹扩散)
+        orbitNodes.forEach(node => {
+            if (node.dom) {
+                node.dom.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const rect = node.dom.getBoundingClientRect();
+                    const cx = rect.left + rect.width / 2;
+                    const cy = rect.top + rect.height / 2;
+                    openSpaceModal(node.index, cx, cy);
+                });
+            }
+        });
+
+        // 档案顶部关闭按钮
+        if (spaceModalCloseBtn) {
+            spaceModalCloseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeSpaceModal();
+            });
+        }
+
+        // 键盘 Esc 处理
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (spaceModalStage && spaceModalStage.classList.contains('active')) {
+                    closeSpaceModal();
+                }
+            }
+        });
+
+        // ----------------------------------------------------
+        // 多页面路由状态管理 (主页 <-> 太空地球)
+        // ----------------------------------------------------
+        const pageViews = document.querySelectorAll('.page-view');
+        const homeBtn = document.getElementById('homeBtn');
+        const enterRoomBtn = document.getElementById('btn-enter-room');
+        const bottomNav = document.getElementById('bottomNav');
+
+        let currentPageId = 'page-home';
+
+        function switchPage(targetPageId) {
+            currentPageId = targetPageId;
+
+            pageViews.forEach(view => {
+                if (view.id === targetPageId) {
+                    view.classList.add('active');
+                } else {
+                    view.classList.remove('active');
+                }
+            });
+
+            // 调整主页 3D 钻石投影与按键显示
+            if (targetPageId !== 'page-home') {
+                homeBtn.classList.add('visible');
+                projCanvas.style.opacity = '0';
+                projCanvas.style.display = 'none';
+                // 跳转后彻底删除/隐藏最下方的那个地球小图标
+                if (bottomNav) bottomNav.style.display = 'none';
+            } else {
+                homeBtn.classList.remove('visible');
+                projCanvas.style.display = 'block';
+                projCanvas.style.opacity = '1';
+                projCanvas.style.transform = 'scale(1)';
+                if (bottomNav) bottomNav.style.display = 'flex';
+            }
+        }
+
+        // 主页底部单一按键进入太空地球
+        if (enterRoomBtn) {
+            enterRoomBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                switchPage('page-room');
+            });
+        }
+
+        // 左上角返回按键回到主页
+        if (homeBtn) {
+            homeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (spaceModalStage && spaceModalStage.classList.contains('active')) {
+                    closeSpaceModal();
+                } else {
+                    switchPage('page-home');
+                }
+            });
+        }
+
+        // 白天 / 黑夜切换与亮度调节
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const themeIconSun = document.getElementById('themeIconSun');
+        const themeIconMoon = document.getElementById('themeIconMoon');
+        const brightnessRange = document.getElementById('brightnessRange');
+
+        let isDarkMode = false;
+
+        function updateTheme(dark) {
+            isDarkMode = dark;
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                themeIconSun.style.display = 'none';
+                themeIconMoon.style.display = 'block';
+                projAmbientLight.intensity = 0.8;
+                projDirLight.intensity = 1.3;
+                earthAmbientLight.intensity = 0.8;
+                earthSunLight.intensity = 1.8;
+            } else {
+                document.body.classList.remove('dark-mode');
+                themeIconSun.style.display = 'block';
+                themeIconMoon.style.display = 'none';
+                projAmbientLight.intensity = 1.3;
+                projDirLight.intensity = 2.0;
+                earthAmbientLight.intensity = 1.3;
+                earthSunLight.intensity = 2.4;
+            }
+            bgUniforms.uTexture.value = createDynamicBgTexture(isDarkMode);
+        }
+
+        if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', () => {
+                updateTheme(!isDarkMode);
+            });
+        }
+
+        if (brightnessRange) {
+            brightnessRange.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                bgUniforms.uBrightness.value = val;
+                projAmbientLight.intensity = (isDarkMode ? 0.8 : 1.3) * val;
+                projDirLight.intensity = (isDarkMode ? 1.3 : 2.0) * val;
+                earthAmbientLight.intensity = (isDarkMode ? 0.8 : 1.3) * val;
+                earthSunLight.intensity = (isDarkMode ? 1.8 : 2.4) * val;
+            });
+        }
+
+        // ----------------------------------------------------
+        // 动画渲染主循环 (包含主页钻石 + 太空地球)
+        // ----------------------------------------------------
+        let earthClock = 0;
+
+        function animateAllScenes() {
+            requestAnimationFrame(animateAllScenes);
+            earthClock += 0.016;
+
+            // 1. 主页钻石投影动画渲染 (始终保持底图与钻石物理交互更新)
+            currentMouse.x += (targetMouse.x - currentMouse.x) * 0.05;
+            currentMouse.y += (targetMouse.y - currentMouse.y) * 0.05;
+            currentHover += (targetHover - currentHover) * 0.05;
+
+            bgUniforms.uMouse.value.copy(currentMouse);
+            bgUniforms.uHoverState.value = currentHover;
+            bgRenderer.render(bgScene, bgCamera);
+
+            updateVideoTextureCanvas();
+
+            mainGroup.rotation.y += (mouseScreenX * 0.35 - mainGroup.rotation.y) * 0.06;
+            mainGroup.rotation.x += (-mouseScreenY * 0.28 - mainGroup.rotation.x) * 0.06;
+
+            raycaster.setFromCamera(rayMouse, projCamera);
+            const intersects = raycaster.intersectObject(hitPlaneMesh);
+            if (intersects.length > 0 && currentHover > 0.1) {
+                hoverPoint.copy(intersects[0].point);
+                hitPlaneMesh.worldToLocal(hoverPoint);
+            } else {
+                hoverPoint.set(999, 999, 999);
+            }
+
+            const maxDistance = 0.8; 
+            for (let i = 0; i < cubes.length; i++) {
+                const c = cubes[i];
+                let distToMouse = 999;
+                if (hoverPoint.x !== 999) {
+                    const dx = c.userData.baseX - hoverPoint.x;
+                    const dy = c.userData.baseY - hoverPoint.y;
+                    distToMouse = Math.sqrt(dx * dx + dy * dy);
+                }
+
+                const baseWave = Math.sin(clock * 2.2 + c.userData.distToCenter * 0.5) * 0.065;
+                let stretchEffect = 0;
+                if (distToMouse < maxDistance) {
+                    stretchEffect = Math.exp(-Math.pow(distToMouse / 0.35, 2));
+                }
+
+                c.userData.targetZ = baseWave + stretchEffect * 0.15; 
+                c.userData.targetScale = 1.0 + stretchEffect * 0.4; 
+                c.userData.targetScaleZ = 1.0 + stretchEffect * 3.5; 
+
+                c.position.z += (c.userData.targetZ - c.position.z) * 0.15;
+                c.scale.x += (c.userData.targetScale - c.scale.x) * 0.15;
+                c.scale.y += (c.userData.targetScale - c.scale.y) * 0.15;
+                if (c.userData.targetScaleZ) {
+                    c.scale.z += (c.userData.targetScaleZ - c.scale.z) * 0.15;
+                }
+            }
+
+            projRenderer.render(projScene, projCamera);
+
+            // 2. 太空地球专属旋转与投影渲染
+            if (currentPageId === 'page-room') {
+                if (!isDraggingGlobe) {
+                    // 空闲时自然缓动微自转
+                    targetRotY += 0.0016;
+                }
+
+                currentRotY += (targetRotY - currentRotY) * 0.08;
+                currentRotX += (targetRotX - currentRotX) * 0.08;
+
+                earthRootGroup.rotation.y = currentRotY;
+                earthRootGroup.rotation.x = currentRotX;
+
+                // 差速旋转星空与香槟金微粒环
+                cosmicBackgroundGroup.rotation.y += 0.00015;
+                if (diffractionStarsMesh) {
+                    diffractionStarsMesh.material.opacity = 0.84 + Math.sin(earthClock * 2.5) * 0.14;
+                }
+                // 银河全天区繁星如流萤般呼吸闪烁更新
+                if (milkyWaySparkleMat && milkyWaySparkleMat.uniforms.uTime) {
+                    milkyWaySparkleMat.uniforms.uTime.value = earthClock;
+                }
+                beltGoldGroup.rotation.y += 0.0009;
+                beltSilverGroup.rotation.y -= 0.0007;
+
+                // 海洋萤火虫动态呼吸、闪烁与洋流漂移更新
+                if (oceanFireflyMat && oceanFireflyMat.uniforms.uTime) {
+                    oceanFireflyMat.uniforms.uTime.value = earthClock;
+                }
+
+                // 粒子卫星全息自旋与星芒脉冲动画
+                satelliteParticleControllers.forEach((sat, idx) => {
+                    sat.ring.rotation.y += 0.035;
+                    sat.ring.rotation.x += 0.015;
+
+                    const pulse = 1.0 + Math.sin(earthClock * 4.0 + idx * 1.5) * 0.12;
+                    sat.body.scale.set(pulse, pulse, pulse);
+                    sat.core.scale.set(1.0 + Math.sin(earthClock * 6.0 + idx) * 0.15, 1.0 + Math.sin(earthClock * 6.0 + idx) * 0.15, 1.0);
+                });
+
+                // 更新 2D 浮空卡片投影视口位置
+                updateProjectedBadges();
+
+                earthRenderer.render(earthScene, earthCamera);
+            }
+        }
+
+        // 启动主渲染循环
+        animateAllScenes();
+
+        // ----------------------------------------------------
+        // 窗口 Resize 响应处理
+        // ----------------------------------------------------
+        window.addEventListener('resize', () => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            // 主页钻石摄像机
+            projCamera.aspect = w / h;
+            projCamera.updateProjectionMatrix();
+            projRenderer.setSize(w, h);
+
+            // 背景画布
+            bgRenderer.setSize(w, h);
+
+            // 地球摄像机
+            earthCamera.aspect = w / h;
+            earthCamera.updateProjectionMatrix();
+            earthRenderer.setSize(w, h);
+        });
+    </script>
+</body>
+</html>
