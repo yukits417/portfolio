@@ -834,6 +834,14 @@
                 top: max(16px, env(safe-area-inset-top, 16px));
                 right: max(16px, env(safe-area-inset-right, 16px));
             }
+            .music-toggle-btn {
+                width: 40px;
+                height: 40px;
+            }
+            .music-toggle-btn svg {
+                width: 20px;
+                height: 20px;
+            }
             .bottom-nav {
                 bottom: max(24px, env(safe-area-inset-bottom, 24px));
             }
@@ -1138,6 +1146,9 @@
                 <line x1="2" y1="2" x2="22" y2="22"></line>
             </svg>
         </button>
+
+        <!-- 背景纯音乐音频源 (原生跨移动端/iOS/Android/微信高保真循环播放) -->
+        <audio id="bgMusicAudio" loop preload="auto" playsinline webkit-playsinline src="audio/mystic-ambient.m4a"></audio>
 
         <div class="brightness-slider-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -4118,10 +4129,11 @@
         });
 
         // ----------------------------------------------------
-        // 神秘轻柔纯音乐音频合成引擎 (Web Audio API Procedural Synthesizer)
+        // 神秘轻柔纯音乐音频合成与移动端多端播放引擎 (Hybrid Engine)
         // ----------------------------------------------------
         class MysticAudioController {
             constructor() {
+                this.audioEl = document.getElementById("bgMusicAudio");
                 this.ctx = null;
                 this.masterGain = null;
                 this.isPlaying = false;
@@ -4129,152 +4141,74 @@
                 this.arpeggioTimer = null;
                 this.droneOscs = [];
                 this.chimeNotes = [
-                    261.63, 293.66, 329.63, 392.00, 440.00, // C4, D4, E4, G4, A4
-                    523.25, 587.33, 659.25, 783.99, 880.00, // C5, D5, E5, G5, A5
-                    1046.50                                  // C6
+                    261.63, 293.66, 329.63, 392.00, 440.00,
+                    523.25, 587.33, 659.25, 783.99, 880.00,
+                    1046.50
                 ];
                 this.btn = document.getElementById("musicToggleBtn");
                 this.iconPlaying = document.getElementById("musicIconPlaying");
                 this.iconMuted = document.getElementById("musicIconMuted");
+
+                if (this.audioEl) {
+                    this.audioEl.volume = 0.40;
+                }
+
                 this.initButton();
                 this.initAutoUnlock();
             }
 
-            initContext() {
-                if (this.ctx) return;
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (!AudioCtx) return;
-                this.ctx = new AudioCtx();
-
-                // 主增益与温润主低通滤波
-                this.masterGain = this.ctx.createGain();
-                this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime);
-
-                const masterFilter = this.ctx.createBiquadFilter();
-                masterFilter.type = "lowpass";
-                masterFilter.frequency.setValueAtTime(2200, this.ctx.currentTime);
-                masterFilter.Q.setValueAtTime(0.7, this.ctx.currentTime);
-
-                this.masterGain.connect(masterFilter);
-                masterFilter.connect(this.ctx.destination);
-
-                // 空间回响延迟网络 (Cathedral Space Reverb / Delay)
-                this.delayNode = this.ctx.createDelay();
-                this.delayNode.delayTime.setValueAtTime(0.42, this.ctx.currentTime);
-                this.delayFeedback = this.ctx.createGain();
-                this.delayFeedback.gain.setValueAtTime(0.38, this.ctx.currentTime);
-                this.delayFilter = this.ctx.createBiquadFilter();
-                this.delayFilter.type = "lowpass";
-                this.delayFilter.frequency.setValueAtTime(1400, this.ctx.currentTime);
-
-                this.delayNode.connect(this.delayFilter);
-                this.delayFilter.connect(this.delayFeedback);
-                this.delayFeedback.connect(this.delayNode);
-                this.delayFilter.connect(masterFilter);
-
-                this.startCosmicDrone();
-                this.startGenerativeChimes();
-            }
-
-            startCosmicDrone() {
-                if (!this.ctx) return;
-                // 幽远冥想低音穹顶 (Warm root drone 65.4Hz / 98.0Hz)
-                const roots = [65.41, 98.00, 130.81];
-                roots.forEach((freq, idx) => {
-                    const osc = this.ctx.createOscillator();
-                    const oscGain = this.ctx.createGain();
-                    osc.type = idx === 1 ? "triangle" : "sine";
-                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-
-                    // 缓慢微摆动颤音
-                    const lfo = this.ctx.createOscillator();
-                    const lfoGain = this.ctx.createGain();
-                    lfo.frequency.setValueAtTime(0.08 + idx * 0.03, this.ctx.currentTime);
-                    lfoGain.gain.setValueAtTime(1.2, this.ctx.currentTime);
-                    lfo.connect(osc.frequency);
-                    lfo.start();
-
-                    oscGain.gain.setValueAtTime(0.06 / (idx + 1), this.ctx.currentTime);
-                    osc.connect(oscGain);
-                    oscGain.connect(this.masterGain);
-                    osc.start();
-                    this.droneOscs.push(osc, lfo);
-                });
-            }
-
-            startGenerativeChimes() {
-                const scheduleNextNote = () => {
-                    if (!this.isPlaying || !this.ctx) {
-                        this.arpeggioTimer = setTimeout(scheduleNextNote, 1500);
-                        return;
+            unlockWebAudio() {
+                try {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (!this.ctx && AudioCtx) {
+                        this.ctx = new AudioCtx();
                     }
-                    this.playCrystalNote();
-                    // 间隔 1.8 到 3.6 秒随机触发纯净水晶钟琴音符
-                    const nextDelay = 1800 + Math.random() * 1800;
-                    this.arpeggioTimer = setTimeout(scheduleNextNote, nextDelay);
-                };
-                scheduleNextNote();
-            }
-
-            playCrystalNote() {
-                if (!this.ctx || this.ctx.state !== "running") return;
-                const now = this.ctx.currentTime;
-                const noteFreq = this.chimeNotes[Math.floor(Math.random() * this.chimeNotes.length)];
-
-                // 主音与泛音振荡器
-                const osc = this.ctx.createOscillator();
-                const harmOsc = this.ctx.createOscillator();
-                const noteGain = this.ctx.createGain();
-
-                osc.type = "sine";
-                osc.frequency.setValueAtTime(noteFreq, now);
-
-                harmOsc.type = "sine";
-                harmOsc.frequency.setValueAtTime(noteFreq * 2.01, now);
-                const harmGain = this.ctx.createGain();
-                harmGain.gain.setValueAtTime(0.22, now);
-                harmOsc.connect(harmGain);
-                harmGain.connect(noteGain);
-
-                // 柔和优雅的钟声包络 (快速弱冲，长尾弥散)
-                noteGain.gain.setValueAtTime(0.0001, now);
-                noteGain.gain.exponentialRampToValueAtTime(0.18, now + 0.06);
-                noteGain.gain.exponentialRampToValueAtTime(0.0001, now + 3.2);
-
-                osc.connect(noteGain);
-                noteGain.connect(this.masterGain);
-                noteGain.connect(this.delayNode);
-
-                osc.start(now);
-                harmOsc.start(now);
-                osc.stop(now + 3.3);
-                harmOsc.stop(now + 3.3);
+                    if (this.ctx && this.ctx.state === "suspended") {
+                        this.ctx.resume();
+                    }
+                    if (this.ctx) {
+                        const buffer = this.ctx.createBuffer(1, 1, 22050);
+                        const src = this.ctx.createBufferSource();
+                        src.buffer = buffer;
+                        src.connect(this.ctx.destination);
+                        src.start(0);
+                    }
+                } catch (e) {}
             }
 
             play() {
-                this.initContext();
-                if (this.ctx && this.ctx.state === "suspended") {
-                    this.ctx.resume();
-                }
-                this.isPlaying = true;
                 this.userMuted = false;
-                if (this.masterGain && this.ctx) {
-                    const now = this.ctx.currentTime;
-                    this.masterGain.gain.cancelScheduledValues(now);
-                    this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
-                    this.masterGain.gain.linearRampToValueAtTime(0.24, now + 1.6);
+                this.unlockWebAudio();
+
+                let playedAudioTag = false;
+                if (this.audioEl) {
+                    const promise = this.audioEl.play();
+                    if (promise !== undefined) {
+                        promise.then(() => {
+                            this.isPlaying = true;
+                            this.updateUI(true);
+                        }).catch(() => {
+                            // 若仍受系统限制，则静默等待用户轻触按钮
+                        });
+                        playedAudioTag = true;
+                    }
                 }
-                this.updateUI(true);
+
+                if (!playedAudioTag) {
+                    this.isPlaying = true;
+                    this.updateUI(true);
+                }
             }
 
             pause() {
-                if (!this.ctx) return;
-                this.isPlaying = false;
                 this.userMuted = true;
-                const now = this.ctx.currentTime;
-                this.masterGain.gain.cancelScheduledValues(now);
-                this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
-                this.masterGain.gain.linearRampToValueAtTime(0.0001, now + 0.6);
+                this.isPlaying = false;
+                if (this.audioEl) {
+                    this.audioEl.pause();
+                }
+                if (this.ctx && this.ctx.state === "running") {
+                    this.ctx.suspend();
+                }
                 this.updateUI(false);
             }
 
@@ -4304,23 +4238,38 @@
 
             initButton() {
                 if (this.btn) {
-                    this.btn.addEventListener("click", (e) => {
+                    const handleToggle = (e) => {
                         e.stopPropagation();
+                        e.preventDefault();
                         this.toggle();
-                    });
+                    };
+                    this.btn.addEventListener("click", handleToggle);
+                    this.btn.addEventListener("touchend", handleToggle);
                 }
             }
 
             initAutoUnlock() {
-                const unlockAudio = () => {
+                const tryUnlock = () => {
                     if (!this.userMuted && !this.isPlaying) {
                         this.play();
                     }
-                    window.removeEventListener("pointerdown", unlockAudio);
-                    window.removeEventListener("keydown", unlockAudio);
+                    ["touchstart", "touchend", "click", "pointerdown"].forEach((evt) => {
+                        window.removeEventListener(evt, tryUnlock);
+                        document.removeEventListener(evt, tryUnlock);
+                    });
                 };
-                window.addEventListener("pointerdown", unlockAudio, { passive: true });
-                window.addEventListener("keydown", unlockAudio, { passive: true });
+
+                ["touchstart", "touchend", "click", "pointerdown"].forEach((evt) => {
+                    window.addEventListener(evt, tryUnlock, { passive: true, once: true });
+                    document.addEventListener(evt, tryUnlock, { passive: true, once: true });
+                });
+
+                // 针对微信内置浏览器的自动播放支持
+                if (typeof WeixinJSBridge !== "undefined") {
+                    tryUnlock();
+                } else {
+                    document.addEventListener("WeixinJSBridgeReady", tryUnlock, false);
+                }
             }
         }
 
