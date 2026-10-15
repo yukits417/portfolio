@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Portfolio</title>
+    <title>yukits的个人主页</title>
     <!-- 引入西方古典衬线字体 Cinzel、Cormorant Garamond 与代码字体 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -434,28 +434,208 @@
             top: 96px;
         }
 
-        /* 典藏画卷照片卡片 */
+        /* ----------------------------------------------------
+           典藏塔罗牌：5张展开扇形与 3D 环幕星轨巡游 (上大下小透视)
+        ---------------------------------------------------- */
         .editorial-media-card {
             width: 270px;
+            border-radius: 6px;
+            overflow: visible !important;
+            background: transparent;
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            perspective: 1200px;
+        }
+
+        .tarot-spread-deck {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 545 / 1024;
+            transform-style: preserve-3d;
+        }
+
+        .tarot-card-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
             border-radius: 6px;
             overflow: hidden;
             border: 1.5px solid #000000;
             box-shadow: 6px 8px 0px rgba(0, 0, 0, 0.95);
             background: #2b5c5b;
-            position: relative;
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+            transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, opacity 0.4s ease;
+            transform-origin: 50% 100%;
+            will-change: transform;
         }
-        .editorial-media-card:hover {
-            transform: translate(-3px, -4px);
-            box-shadow: 9px 13px 0px rgba(0, 0, 0, 1);
+
+        /* 默认单张展示 */
+        .tarot-card-layer:not(.active) {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.97) translateY(4px);
+            z-index: 1;
         }
-        .editorial-tarot-img {
-            width: 100%;
-            height: auto;
+        .tarot-card-layer.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            z-index: 5;
+        }
+
+        /* 状态 1: 点击一下，展开 5 张塔罗牌 (扇形五芒星优雅铺开) */
+        .editorial-media-card.is-fanned .tarot-card-layer {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .editorial-media-card.is-fanned .tarot-card-layer[data-index="0"] {
+            transform: translate3d(-135px, 18px, -20px) rotate(-14deg) scale(0.85);
+            z-index: 2;
+        }
+        .editorial-media-card.is-fanned .tarot-card-layer[data-index="1"] {
+            transform: translate3d(-68px, 6px, -10px) rotate(-7deg) scale(0.92);
+            z-index: 3;
+        }
+        .editorial-media-card.is-fanned .tarot-card-layer[data-index="2"] {
+            transform: translate3d(0, 0, 15px) rotate(0deg) scale(1.02);
+            z-index: 6;
+            box-shadow: 0 0 28px rgba(216, 183, 107, 0.6), 8px 10px 0px rgba(0, 0, 0, 0.95);
+        }
+        .editorial-media-card.is-fanned .tarot-card-layer[data-index="3"] {
+            transform: translate3d(68px, 6px, -10px) rotate(7deg) scale(0.92);
+            z-index: 3;
+        }
+        .editorial-media-card.is-fanned .tarot-card-layer[data-index="4"] {
+            transform: translate3d(135px, 18px, -20px) rotate(14deg) scale(0.85);
+            z-index: 2;
+        }
+
+        .editorial-media-card.is-fanned .tarot-card-layer:hover {
+            z-index: 12 !important;
+            transform: translate3d(0, -14px, 35px) scale(1.06) !important;
+            box-shadow: 0 0 35px rgba(255, 255, 255, 0.8), 0 0 50px rgba(216, 183, 107, 0.7), 10px 14px 0px rgba(0,0,0,1);
+        }
+
+        .tarot-fan-hint {
+            position: absolute;
+            bottom: -34px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-family: 'Cinzel', 'Songti SC', serif;
+            font-size: 11px;
+            font-weight: 600;
+            color: #d8b76b;
+            background: rgba(21, 50, 46, 0.92);
+            border: 1px solid rgba(216, 183, 107, 0.5);
+            border-radius: 999px;
+            padding: 4px 12px;
+            letter-spacing: 0.05em;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.35s ease, transform 0.35s ease;
+            z-index: 20;
+        }
+        .editorial-media-card:hover .tarot-fan-hint,
+        .editorial-media-card.is-fanned .tarot-fan-hint {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .editorial-media-card.is-fanned .tarot-card-layer[data-index="0"] {
+                transform: translate3d(-80px, 12px, -15px) rotate(-12deg) scale(0.78);
+            }
+            .editorial-media-card.is-fanned .tarot-card-layer[data-index="1"] {
+                transform: translate3d(-40px, 4px, -8px) rotate(-6deg) scale(0.88);
+            }
+            .editorial-media-card.is-fanned .tarot-card-layer[data-index="2"] {
+                transform: translate3d(0, 0, 10px) rotate(0deg) scale(0.96);
+            }
+            .editorial-media-card.is-fanned .tarot-card-layer[data-index="3"] {
+                transform: translate3d(40px, 4px, -8px) rotate(6deg) scale(0.88);
+            }
+            .editorial-media-card.is-fanned .tarot-card-layer[data-index="4"] {
+                transform: translate3d(80px, 12px, -15px) rotate(12deg) scale(0.78);
+            }
+            .tarot-fan-hint {
+                font-size: 10px;
+                bottom: -28px;
+            }
+        }
+
+        /* 状态 2: 3D 屏幕环绕星轨巡游全屏舞台 */
+        .tarot-orbit-stage {
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+            perspective: 1200px;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 50%, rgba(13, 35, 33, 0.75) 0%, rgba(5, 15, 14, 0.9) 100%);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+        .tarot-orbit-stage.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .tarot-orbit-banner {
+            position: absolute;
+            top: max(26px, env(safe-area-inset-top, 26px));
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cinzel Decorative', 'Cinzel', 'Songti SC', serif;
+            font-size: clamp(14px, 2.5vw, 18px);
+            font-weight: 700;
+            color: #fff2c2;
+            background: rgba(32, 69, 68, 0.88);
+            border: 1.5px solid #d8b76b;
+            box-shadow: 0 0 20px rgba(216, 183, 107, 0.5), 0 4px 16px rgba(0, 0, 0, 0.6);
+            padding: 8px 24px;
+            border-radius: 999px;
+            letter-spacing: 0.08em;
+            text-align: center;
+            z-index: 310;
+            animation: bannerGlow 2.5s infinite ease-in-out;
+        }
+        @keyframes bannerGlow {
+            0%, 100% { box-shadow: 0 0 16px rgba(216, 183, 107, 0.4); }
+            50% { box-shadow: 0 0 28px rgba(216, 183, 107, 0.85), 0 0 8px #ffffff; }
+        }
+
+        .tarot-orbit-card {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 220px;
             aspect-ratio: 545 / 1024;
-            object-fit: cover;
-            display: block;
+            margin-top: -206px;
+            margin-left: -110px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1.5px solid #000000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(216, 183, 107, 0.4);
+            transform-style: preserve-3d;
+            will-change: transform, opacity;
+            pointer-events: none;
+            transition: box-shadow 0.3s ease;
         }
+        @media (max-width: 768px) {
+            .tarot-orbit-card {
+                width: 150px;
+                margin-top: -140px;
+                margin-left: -75px;
+            }
+        }
+
         .editorial-tarot-svg {
             width: 100%;
             height: auto;
@@ -713,7 +893,51 @@
             width: 18px;
             height: 18px;
             stroke: currentColor;
+        }
+
+        .music-toggle-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--btn-bg);
+            border: 1px solid var(--btn-border);
+            color: var(--btn-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+        }
+        .music-toggle-btn:hover {
+            transform: scale(1.1);
+            background: var(--btn-hover-bg);
+            border-color: rgba(216, 183, 107, 0.7);
+            color: #d8b76b;
+            box-shadow: 0 0 14px rgba(216, 183, 107, 0.35);
+        }
+        .music-toggle-btn.is-playing {
+            border-color: #d8b76b;
+            color: #d8b76b;
+            animation: musicPulse 2.8s infinite ease-in-out;
+        }
+        @keyframes musicPulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(216, 183, 107, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(216, 183, 107, 0.65), 0 0 6px #ffffff; }
+        }
+        .music-toggle-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
             transition: transform 0.4s ease;
+        }
+
+        /* 跳转后隐藏亮度调节滑块，只保留跳转前 */
+        body.page-room-active .brightness-slider-wrap,
+        body.space-modal-open .brightness-slider-wrap,
+        body:has(#spaceModalStage.active) .brightness-slider-wrap {
+            display: none !important;
         }
 
         .brightness-slider-wrap {
@@ -800,6 +1024,38 @@
             transform: translateY(0) scale(0.96);
         }
 
+        /* 主页底部按钮悬停气泡：点击探索我的世界 */
+        .single-room-btn::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 12px);
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            padding: 6px 14px;
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid rgba(216, 183, 107, 0.6);
+            border-radius: 999px;
+            color: #ffffff;
+            font-family: 'Cinzel', 'Songti SC', serif;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            letter-spacing: 0.05em;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 10px rgba(216, 183, 107, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 30;
+        }
+        .single-room-btn:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
         /* 返回主页 / 返回房间按键 */
         .home-btn {
             position: absolute;
@@ -865,6 +1121,21 @@
             </svg>
             <svg id="themeIconMoon" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </button>
+
+        <!-- 神秘轻柔背景音乐控制按键 -->
+        <button class="music-toggle-btn" id="musicToggleBtn" aria-label="背景纯音乐" title="神秘轻柔纯音乐 (点击播放/静音)">
+            <svg id="musicIconPlaying" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18V5l12-2v13"></path>
+                <circle cx="6" cy="18" r="3"></circle>
+                <circle cx="18" cy="16" r="3"></circle>
+            </svg>
+            <svg id="musicIconMuted" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18V5l12-2v13"></path>
+                <circle cx="6" cy="18" r="3"></circle>
+                <circle cx="18" cy="16" r="3"></circle>
+                <line x1="2" y1="2" x2="22" y2="22"></line>
             </svg>
         </button>
 
@@ -981,6 +1252,12 @@
                             <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
                     </button>
+
+                    <!-- 3D 环幕星轨巡游全屏舞台 (绕屏旋转一圈，上大下小透视巡游) -->
+                    <div class="tarot-orbit-stage" id="tarotOrbitStage" aria-hidden="true">
+                        <div class="tarot-orbit-banner">✦ 塔罗星轨巡游 · 3D 环幕漫游中 ✦</div>
+                        <div class="tarot-orbit-track" id="tarotOrbitTrack"></div>
+                    </div>
 
                     <div class="editorial-container" id="editorialContainer">
                         <!-- 主流编辑档案列表 (图文并茂经典画廊版式，单板块专属展示) -->
@@ -1409,7 +1686,7 @@
                                                 <li class="editorial-reference-item">
                                                     <div class="editorial-reference-box">
                                                         <span class="ref-tag">主页 3D 交互</span>
-                                                        <span class="ref-url-text">https://github.com/Efetivos/video-projection-codrops.git</span>
+                                                        <span class="ref-url-text">https://github.com/Efetivos/video-projection-codrops</span>
                                                     </div>
                                                 </li>
                                                 <li class="editorial-reference-item">
@@ -1523,7 +1800,7 @@
 
     <!-- 主页底部单一简约拇指大小按键 (三合一，点击进入日系手绘房间) -->
     <nav class="bottom-nav" id="bottomNav">
-        <button class="single-room-btn" id="btn-enter-room" aria-label="Enter Earth Cosmos" title="点击探索地球宇宙">
+        <button class="single-room-btn" id="btn-enter-room" aria-label="点击探索我的世界" title="点击探索我的世界" data-tooltip="点击探索我的世界">
             <!-- 极简科技地球经纬图标 -->
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="9.5"></circle>
@@ -3532,6 +3809,9 @@
         window.closeSpaceModal = closeSpaceModal;
 
         function openSpaceModal(index, clickX, clickY) {
+            // 标记档案弹窗开启状态
+            document.body.classList.add('space-modal-open');
+
             // 优雅平滑旋转地球，将点击的节点聚焦至视口前方
             const node = orbitNodes[index];
             if (node) {
@@ -3556,6 +3836,7 @@
         }
 
         function closeSpaceModal() {
+            document.body.classList.remove('space-modal-open');
             spaceModalStage.classList.remove('active');
             spaceModalStage.setAttribute('aria-hidden', 'true');
             if (editorialContainer) {
@@ -3619,14 +3900,16 @@
                 }
             });
 
-            // 调整主页 3D 钻石投影与按键显示
+            // 调整主页 3D 钻石投影与按键显示，并标记进入探索状态
             if (targetPageId !== 'page-home') {
+                document.body.classList.add('page-room-active');
                 homeBtn.classList.add('visible');
                 projCanvas.style.opacity = '0';
                 projCanvas.style.display = 'none';
                 // 跳转后彻底删除/隐藏最下方的那个地球小图标
                 if (bottomNav) bottomNav.style.display = 'none';
             } else {
+                document.body.classList.remove('page-room-active');
                 homeBtn.classList.remove('visible');
                 projCanvas.style.display = 'block';
                 projCanvas.style.opacity = '1';
@@ -3833,6 +4116,461 @@
             updateEarthCameraViewport();
             earthRenderer.setSize(w, h);
         });
+
+        // ----------------------------------------------------
+        // 神秘轻柔纯音乐音频合成引擎 (Web Audio API Procedural Synthesizer)
+        // ----------------------------------------------------
+        class MysticAudioController {
+            constructor() {
+                this.ctx = null;
+                this.masterGain = null;
+                this.isPlaying = false;
+                this.userMuted = false;
+                this.arpeggioTimer = null;
+                this.droneOscs = [];
+                this.chimeNotes = [
+                    261.63, 293.66, 329.63, 392.00, 440.00, // C4, D4, E4, G4, A4
+                    523.25, 587.33, 659.25, 783.99, 880.00, // C5, D5, E5, G5, A5
+                    1046.50                                  // C6
+                ];
+                this.btn = document.getElementById("musicToggleBtn");
+                this.iconPlaying = document.getElementById("musicIconPlaying");
+                this.iconMuted = document.getElementById("musicIconMuted");
+                this.initButton();
+                this.initAutoUnlock();
+            }
+
+            initContext() {
+                if (this.ctx) return;
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                this.ctx = new AudioCtx();
+
+                // 主增益与温润主低通滤波
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime);
+
+                const masterFilter = this.ctx.createBiquadFilter();
+                masterFilter.type = "lowpass";
+                masterFilter.frequency.setValueAtTime(2200, this.ctx.currentTime);
+                masterFilter.Q.setValueAtTime(0.7, this.ctx.currentTime);
+
+                this.masterGain.connect(masterFilter);
+                masterFilter.connect(this.ctx.destination);
+
+                // 空间回响延迟网络 (Cathedral Space Reverb / Delay)
+                this.delayNode = this.ctx.createDelay();
+                this.delayNode.delayTime.setValueAtTime(0.42, this.ctx.currentTime);
+                this.delayFeedback = this.ctx.createGain();
+                this.delayFeedback.gain.setValueAtTime(0.38, this.ctx.currentTime);
+                this.delayFilter = this.ctx.createBiquadFilter();
+                this.delayFilter.type = "lowpass";
+                this.delayFilter.frequency.setValueAtTime(1400, this.ctx.currentTime);
+
+                this.delayNode.connect(this.delayFilter);
+                this.delayFilter.connect(this.delayFeedback);
+                this.delayFeedback.connect(this.delayNode);
+                this.delayFilter.connect(masterFilter);
+
+                this.startCosmicDrone();
+                this.startGenerativeChimes();
+            }
+
+            startCosmicDrone() {
+                if (!this.ctx) return;
+                // 幽远冥想低音穹顶 (Warm root drone 65.4Hz / 98.0Hz)
+                const roots = [65.41, 98.00, 130.81];
+                roots.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const oscGain = this.ctx.createGain();
+                    osc.type = idx === 1 ? "triangle" : "sine";
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+
+                    // 缓慢微摆动颤音
+                    const lfo = this.ctx.createOscillator();
+                    const lfoGain = this.ctx.createGain();
+                    lfo.frequency.setValueAtTime(0.08 + idx * 0.03, this.ctx.currentTime);
+                    lfoGain.gain.setValueAtTime(1.2, this.ctx.currentTime);
+                    lfo.connect(osc.frequency);
+                    lfo.start();
+
+                    oscGain.gain.setValueAtTime(0.06 / (idx + 1), this.ctx.currentTime);
+                    osc.connect(oscGain);
+                    oscGain.connect(this.masterGain);
+                    osc.start();
+                    this.droneOscs.push(osc, lfo);
+                });
+            }
+
+            startGenerativeChimes() {
+                const scheduleNextNote = () => {
+                    if (!this.isPlaying || !this.ctx) {
+                        this.arpeggioTimer = setTimeout(scheduleNextNote, 1500);
+                        return;
+                    }
+                    this.playCrystalNote();
+                    // 间隔 1.8 到 3.6 秒随机触发纯净水晶钟琴音符
+                    const nextDelay = 1800 + Math.random() * 1800;
+                    this.arpeggioTimer = setTimeout(scheduleNextNote, nextDelay);
+                };
+                scheduleNextNote();
+            }
+
+            playCrystalNote() {
+                if (!this.ctx || this.ctx.state !== "running") return;
+                const now = this.ctx.currentTime;
+                const noteFreq = this.chimeNotes[Math.floor(Math.random() * this.chimeNotes.length)];
+
+                // 主音与泛音振荡器
+                const osc = this.ctx.createOscillator();
+                const harmOsc = this.ctx.createOscillator();
+                const noteGain = this.ctx.createGain();
+
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(noteFreq, now);
+
+                harmOsc.type = "sine";
+                harmOsc.frequency.setValueAtTime(noteFreq * 2.01, now);
+                const harmGain = this.ctx.createGain();
+                harmGain.gain.setValueAtTime(0.22, now);
+                harmOsc.connect(harmGain);
+                harmGain.connect(noteGain);
+
+                // 柔和优雅的钟声包络 (快速弱冲，长尾弥散)
+                noteGain.gain.setValueAtTime(0.0001, now);
+                noteGain.gain.exponentialRampToValueAtTime(0.18, now + 0.06);
+                noteGain.gain.exponentialRampToValueAtTime(0.0001, now + 3.2);
+
+                osc.connect(noteGain);
+                noteGain.connect(this.masterGain);
+                noteGain.connect(this.delayNode);
+
+                osc.start(now);
+                harmOsc.start(now);
+                osc.stop(now + 3.3);
+                harmOsc.stop(now + 3.3);
+            }
+
+            play() {
+                this.initContext();
+                if (this.ctx && this.ctx.state === "suspended") {
+                    this.ctx.resume();
+                }
+                this.isPlaying = true;
+                this.userMuted = false;
+                if (this.masterGain && this.ctx) {
+                    const now = this.ctx.currentTime;
+                    this.masterGain.gain.cancelScheduledValues(now);
+                    this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+                    this.masterGain.gain.linearRampToValueAtTime(0.24, now + 1.6);
+                }
+                this.updateUI(true);
+            }
+
+            pause() {
+                if (!this.ctx) return;
+                this.isPlaying = false;
+                this.userMuted = true;
+                const now = this.ctx.currentTime;
+                this.masterGain.gain.cancelScheduledValues(now);
+                this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+                this.masterGain.gain.linearRampToValueAtTime(0.0001, now + 0.6);
+                this.updateUI(false);
+            }
+
+            toggle() {
+                if (this.isPlaying) {
+                    this.pause();
+                } else {
+                    this.play();
+                }
+            }
+
+            updateUI(playing) {
+                if (this.btn) {
+                    if (playing) {
+                        this.btn.classList.add("is-playing");
+                        if (this.iconPlaying) this.iconPlaying.style.display = "block";
+                        if (this.iconMuted) this.iconMuted.style.display = "none";
+                        this.btn.title = "神秘轻柔纯音乐 (正在播放 · 点击静音)";
+                    } else {
+                        this.btn.classList.remove("is-playing");
+                        if (this.iconPlaying) this.iconPlaying.style.display = "none";
+                        if (this.iconMuted) this.iconMuted.style.display = "block";
+                        this.btn.title = "神秘轻柔纯音乐 (已静音 · 点击播放)";
+                    }
+                }
+            }
+
+            initButton() {
+                if (this.btn) {
+                    this.btn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        this.toggle();
+                    });
+                }
+            }
+
+            initAutoUnlock() {
+                const unlockAudio = () => {
+                    if (!this.userMuted && !this.isPlaying) {
+                        this.play();
+                    }
+                    window.removeEventListener("pointerdown", unlockAudio);
+                    window.removeEventListener("keydown", unlockAudio);
+                };
+                window.addEventListener("pointerdown", unlockAudio, { passive: true });
+                window.addEventListener("keydown", unlockAudio, { passive: true });
+            }
+        }
+
+        const mysticAudio = new MysticAudioController();
+
+        // ----------------------------------------------------
+        // 塔罗牌 5 张卡牌交互与 3D 环屏巡游动效
+        // ----------------------------------------------------
+        const fifthTarotSvg = `<svg viewBox="0 0 545 1024" class="editorial-tarot-svg" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <pattern id="linenGrid4" width="8" height="8" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(255,255,255,0.04)" stroke-width="1.2"/>
+            <line x1="4" y1="0" x2="4" y2="8" stroke="rgba(0,0,0,0.05)" stroke-width="1.2"/>
+        </pattern>
+        <filter id="glowGold4" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+        <linearGradient id="goldGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#fff2c2"/>
+            <stop offset="50%" stop-color="#d8b76b"/>
+            <stop offset="100%" stop-color="#9a7732"/>
+        </linearGradient>
+    </defs>
+    <rect width="545" height="1024" fill="#2d6463"/>
+    <rect width="545" height="1024" fill="url(#linenGrid4)"/>
+    <ellipse cx="272" cy="512" rx="200" ry="340" fill="#204544" stroke="#2c5b59" stroke-width="2"/>
+    <rect x="22" y="22" width="501" height="980" fill="none" stroke="#d8b76b" stroke-width="1.6"/>
+    <rect x="34" y="34" width="477" height="956" fill="none" stroke="#d8b76b" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="0 14"/>
+    <rect x="46" y="46" width="453" height="932" fill="none" stroke="#d8b76b" stroke-width="1.2"/>
+    <circle cx="26" cy="512" r="13" fill="#2a1215" stroke="#d8b76b" stroke-width="2"/>
+    <circle cx="519" cy="512" r="13" fill="#2a1215" stroke="#d8b76b" stroke-width="2"/>
+    <circle cx="26" cy="512" r="4.5" fill="#d8b76b"/>
+    <circle cx="519" cy="512" r="4.5" fill="#d8b76b"/>
+    <circle cx="46" cy="46" r="6" fill="none" stroke="#d8b76b" stroke-width="1.5"/>
+    <circle cx="499" cy="46" r="6" fill="none" stroke="#d8b76b" stroke-width="1.5"/>
+    <circle cx="46" cy="978" r="6" fill="none" stroke="#d8b76b" stroke-width="1.5"/>
+    <circle cx="499" cy="978" r="6" fill="none" stroke="#d8b76b" stroke-width="1.5"/>
+    <g stroke="#ffffff" opacity="0.82" stroke-dasharray="2 7">
+        <line x1="220" y1="330" x2="220" y2="730" stroke-width="1.5"/>
+        <line x1="244" y1="310" x2="244" y2="760" stroke-width="1.8"/>
+        <line x1="272" y1="290" x2="272" y2="780" stroke-width="2.2" stroke="#e8fffb"/>
+        <line x1="300" y1="310" x2="300" y2="760" stroke-width="1.8"/>
+        <line x1="324" y1="330" x2="324" y2="730" stroke-width="1.5"/>
+    </g>
+    <g transform="translate(272, 512)">
+        <circle cx="0" cy="0" r="180" fill="none" stroke="#d8b76b" stroke-width="1" opacity="0.35"/>
+        <circle cx="0" cy="0" r="150" fill="none" stroke="#d8b76b" stroke-width="1.8" stroke-dasharray="6 4" opacity="0.8"/>
+        <circle cx="0" cy="0" r="120" fill="none" stroke="#d8b76b" stroke-width="1.2" opacity="0.6"/>
+        <circle cx="0" cy="0" r="90" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="3 5" opacity="0.7"/>
+        <circle cx="0" cy="0" r="60" fill="none" stroke="#d8b76b" stroke-width="2" opacity="0.9"/>
+        <circle cx="0" cy="-150" r="6" fill="#fff2c2" filter="url(#glowGold4)"/>
+        <circle cx="150" cy="0" r="6" fill="#fff2c2" filter="url(#glowGold4)"/>
+        <circle cx="0" cy="150" r="6" fill="#fff2c2" filter="url(#glowGold4)"/>
+        <circle cx="-150" cy="0" r="6" fill="#fff2c2" filter="url(#glowGold4)"/>
+        <circle cx="106" cy="106" r="4.5" fill="#d8b76b"/>
+        <circle cx="-106" cy="-106" r="4.5" fill="#d8b76b"/>
+        <circle cx="106" cy="-106" r="4.5" fill="#d8b76b"/>
+        <circle cx="-106" cy="106" r="4.5" fill="#d8b76b"/>
+        <g stroke="#d8b76b" stroke-width="1.5" opacity="0.45">
+            <line x1="-190" y1="0" x2="190" y2="0"/>
+            <line x1="0" y1="-190" x2="0" y2="190"/>
+            <line x1="-135" y1="-135" x2="135" y2="135"/>
+            <line x1="-135" y1="135" x2="135" y2="-135"/>
+        </g>
+        <g id="astralKey" filter="url(#glowGold4)">
+            <circle cx="0" cy="-60" r="28" fill="none" stroke="url(#goldGrad4)" stroke-width="6"/>
+            <circle cx="0" cy="-60" r="16" fill="none" stroke="#d8b76b" stroke-width="2.5" stroke-dasharray="4 3"/>
+            <circle cx="0" cy="-60" r="5" fill="#ffffff"/>
+            <path d="M-28 -60 C-45 -75 -65 -65 -60 -45 C-55 -30 -35 -45 -22 -50" fill="none" stroke="url(#goldGrad4)" stroke-width="3"/>
+            <path d="M28 -60 C45 -75 65 -65 60 -45 C55 -30 35 -45 22 -50" fill="none" stroke="url(#goldGrad4)" stroke-width="3"/>
+            <line x1="0" y1="-32" x2="0" y2="110" stroke="url(#goldGrad4)" stroke-width="7" stroke-linecap="round"/>
+            <line x1="0" y1="-32" x2="0" y2="110" stroke="#ffffff" stroke-width="2" opacity="0.8"/>
+            <path d="M0 60 L24 60 L24 72 L0 72 M0 84 L30 84 L30 96 L16 96 L16 108 L0 108" fill="none" stroke="url(#goldGrad4)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <polygon points="0,110 -6,122 0,130 6,122" fill="url(#goldGrad4)"/>
+            <circle cx="0" cy="122" r="2" fill="#ffffff"/>
+        </g>
+        <path d="M-110 -90 Q-95 -105 -80 -95 Q-65 -105 -50 -90 Q-80 -75 -110 -90 Z" fill="#ffffff" opacity="0.85"/>
+        <path d="M50 -90 Q65 -105 80 -95 Q95 -105 110 -90 Q80 -75 50 -90 Z" fill="#ffffff" opacity="0.85"/>
+    </g>
+    <text x="272" y="105" text-anchor="middle" font-family="Cinzel Decorative, serif" font-size="28" font-weight="700" fill="#fff2c2" letter-spacing="4">V · CLAVIS ASTRALIS</text>
+    <text x="272" y="132" text-anchor="middle" font-family="Cinzel, Songti SC, serif" font-size="13" fill="#d8b76b" letter-spacing="3">群星之钥 · 智慧殿堂</text>
+    <line x1="160" y1="145" x2="385" y2="145" stroke="#d8b76b" stroke-width="1" opacity="0.6"/>
+    <text x="272" y="930" text-anchor="middle" font-family="Songti SC, serif" font-size="14" fill="#fff2c2" letter-spacing="3">「 探 求 宇 宙 秘 境 · 开 启 未 来 篇 章 」</text>
+    <text x="272" y="955" text-anchor="middle" font-family="Cinzel, serif" font-size="10" fill="#d8b76b" letter-spacing="2">WISDOM &amp; DESTINY</text>
+</svg>`;
+
+        function setupInteractiveTarotDecks() {
+            const mediaCards = document.querySelectorAll(".editorial-media-card");
+            if (!mediaCards.length) return;
+
+            const extractedSvgs = [];
+            mediaCards.forEach((card) => {
+                const existingSvg = card.querySelector(".editorial-tarot-svg");
+                if (existingSvg) {
+                    extractedSvgs.push(existingSvg.outerHTML);
+                }
+            });
+            extractedSvgs.push(fifthTarotSvg);
+
+            mediaCards.forEach((card, cardIndex) => {
+                card.innerHTML = "";
+
+                const deck = document.createElement("div");
+                deck.className = "tarot-spread-deck";
+
+                extractedSvgs.forEach((svgHtml, layerIndex) => {
+                    const layer = document.createElement("div");
+                    layer.className = "tarot-card-layer";
+                    layer.setAttribute("data-index", layerIndex);
+                    if (layerIndex === (cardIndex % 5)) {
+                        layer.classList.add("active");
+                    }
+                    layer.innerHTML = svgHtml;
+                    deck.appendChild(layer);
+                });
+
+                const hint = document.createElement("div");
+                hint.className = "tarot-fan-hint";
+                hint.innerText = "✦ 点击展开 5 张塔罗牌 · 再次点击 3D 环屏巡游 ✦";
+
+                card.appendChild(deck);
+                card.appendChild(hint);
+
+                let isOrbiting = false;
+
+                const handleCardTrigger = () => {
+                    if (isOrbiting) return;
+
+                    if (!card.classList.contains("is-fanned")) {
+                        card.classList.add("is-fanned");
+                        hint.innerText = "✦ 再次点击 · 启动 3D 环屏星轨巡游 ✦";
+                    } else {
+                        isOrbiting = true;
+                        launchTarot3DOrbit(card, extractedSvgs, () => {
+                            isOrbiting = false;
+                            card.classList.remove("is-fanned");
+                            hint.innerText = "✦ 点击展开 5 张塔罗牌 · 再次点击 3D 环屏巡游 ✦";
+                        });
+                    }
+                };
+
+                card.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    handleCardTrigger();
+                });
+
+                card.addEventListener("dblclick", (e) => {
+                    e.stopPropagation();
+                    if (isOrbiting) return;
+                    isOrbiting = true;
+                    launchTarot3DOrbit(card, extractedSvgs, () => {
+                        isOrbiting = false;
+                        card.classList.remove("is-fanned");
+                        hint.innerText = "✦ 点击展开 5 张塔罗牌 · 再次点击 3D 环屏巡游 ✦";
+                    });
+                });
+            });
+        }
+
+        function launchTarot3DOrbit(sourceCard, svgs, onComplete) {
+            const stage = document.getElementById("tarotOrbitStage");
+            const track = document.getElementById("tarotOrbitTrack");
+            if (!stage || !track) {
+                if (onComplete) onComplete();
+                return;
+            }
+
+            track.innerHTML = "";
+            const orbitCards = [];
+            for (let i = 0; i < 5; i++) {
+                const c = document.createElement("div");
+                c.className = "tarot-orbit-card";
+                c.setAttribute("data-orbit-idx", i);
+                c.innerHTML = svgs[i];
+                track.appendChild(c);
+                orbitCards.push(c);
+            }
+
+            stage.classList.add("active");
+            stage.setAttribute("aria-hidden", "false");
+
+            const duration = 4200; // 4.2秒完成优雅 3D 环屏巡游
+            let startTime = null;
+
+            function renderOrbitFrame(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const elapsed = timestamp - startTime;
+                const progress = Math.min(elapsed / duration, 1.0);
+
+                const winW = window.innerWidth;
+                const winH = window.innerHeight;
+                const isMobile = winW <= 768;
+                const rx = isMobile ? winW * 0.36 : winW * 0.38;
+                const ry = isMobile ? winH * 0.32 : winH * 0.35;
+
+                const baseAngle = progress * Math.PI * 2;
+
+                orbitCards.forEach((c, idx) => {
+                    const cardAngle = baseAngle + (idx * (Math.PI * 2 / 5)) - (Math.PI / 2);
+
+                    const x = Math.cos(cardAngle) * rx;
+                    const y = Math.sin(cardAngle) * ry;
+
+                    // 上大下小透视规律:
+                    // 屏幕上方 y < 0 处，-sin(cardAngle) 为正 (最大 +1)，呈现宏大近景 (上大)
+                    // 屏幕下方 y > 0 处，-sin(cardAngle) 为负 (最小 -1)，呈现深邃远景 (下小)
+                    const depthFactor = -Math.sin(cardAngle);
+
+                    const scale = 1.0 + depthFactor * 0.35;
+                    const z = depthFactor * 240;
+                    const rotY = Math.cos(cardAngle) * 24;
+                    const rotX = depthFactor * 12;
+
+                    let envelope = 1;
+                    if (progress < 0.12) {
+                        envelope = progress / 0.12;
+                    } else if (progress > 0.88) {
+                        envelope = (1 - progress) / 0.12;
+                    }
+
+                    const zIndex = Math.round((depthFactor + 1) * 50) + 10;
+                    c.style.zIndex = zIndex;
+
+                    const curX = x * envelope;
+                    const curY = y * envelope;
+                    const curScale = 0.85 + (scale - 0.85) * envelope;
+                    const opacity = Math.max(0.4, 0.6 + depthFactor * 0.4);
+
+                    c.style.transform = `translate3d(${curX}px, ${curY}px, ${z}px) rotateY(${rotY}deg) rotateX(${rotX}deg) scale(${curScale})`;
+                    c.style.opacity = (envelope * opacity).toFixed(3);
+                });
+
+                if (progress < 1.0) {
+                    requestAnimationFrame(renderOrbitFrame);
+                } else {
+                    stage.classList.remove("active");
+                    stage.setAttribute("aria-hidden", "true");
+                    setTimeout(() => {
+                        track.innerHTML = "";
+                        if (onComplete) onComplete();
+                    }, 400);
+                }
+            }
+
+            requestAnimationFrame(renderOrbitFrame);
+        }
+
+        // 初始化塔罗牌五牌交互系统
+        setupInteractiveTarotDecks();
     </script>
 </body>
 </html>
