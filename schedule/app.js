@@ -201,6 +201,15 @@ class BrainRhythmScheduler {
     this.confirmApplyPlanBtn = document.getElementById('confirmApplyPlanBtn');
     this.schedulePreviewBox = document.getElementById('schedulePreviewBox');
     this.previewSlotsList = document.getElementById('previewSlotsList');
+    this.previewSummaryBadge = document.getElementById('previewSummaryBadge');
+
+    // 智能排程模式选项 (从现在即刻 vs 明日全天)
+    this.modeFromNow = document.getElementById('modeFromNow');
+    this.modeTomorrow = document.getElementById('modeTomorrow');
+    this.modeNowLabel = document.getElementById('modeNowLabel');
+    this.modeTomorrowLabel = document.getElementById('modeTomorrowLabel');
+    this.nowTimeDisplay = document.getElementById('nowTimeDisplay');
+    this.tomorrowAdjustBox = document.getElementById('tomorrowAdjustBox');
 
     // 导入 AI 规划弹窗
     this.importModal = document.getElementById('importModal');
@@ -234,11 +243,25 @@ class BrainRhythmScheduler {
   }
 
   bindEvents() {
-    // 晚间规划弹窗
+    // 智能排程弹窗
     this.openEveningPlanBtn.addEventListener('click', () => this.openEveningModal());
     this.closeEveningModalBtn.addEventListener('click', () => this.closeEveningModal());
     this.previewPlanBtn.addEventListener('click', () => this.generateHeuristicSchedule());
     this.confirmApplyPlanBtn.addEventListener('click', () => this.applyGeneratedSchedule());
+
+    // 模式切换监听 (从现在即刻 vs 明日全天)
+    if (this.modeFromNow && this.modeTomorrow) {
+      this.modeFromNow.addEventListener('change', () => {
+        this.modeNowLabel.classList.add('active');
+        this.modeTomorrowLabel.classList.remove('active');
+        if (this.tomorrowAdjustBox) this.tomorrowAdjustBox.style.display = 'none';
+      });
+      this.modeTomorrow.addEventListener('change', () => {
+        this.modeTomorrowLabel.classList.add('active');
+        this.modeNowLabel.classList.remove('active');
+        if (this.tomorrowAdjustBox) this.tomorrowAdjustBox.style.display = 'flex';
+      });
+    }
 
     // 模版快速点击添加
     document.querySelectorAll('.chip-btn').forEach(chip => {
@@ -718,12 +741,21 @@ class BrainRhythmScheduler {
   }
 
   // ----------------------------------------------------
-  // 🌙 晚间大脑倾倒 (Brain Dump) & 启发式脑科学智能排程
+  // ⚡ 认知节律智能排程 (支持白天即刻开始 / 晚间规划明日)
   // ----------------------------------------------------
   openEveningModal() {
     this.schedulePreviewBox.style.display = 'none';
     this.confirmApplyPlanBtn.style.display = 'none';
     this.previewPlanBtn.style.display = 'inline-flex';
+
+    // 动态刷新当前时刻指示
+    const now = new Date();
+    const curH = String(now.getHours()).padStart(2, '0');
+    const curM = String(now.getMinutes()).padStart(2, '0');
+    if (this.nowTimeDisplay) {
+      this.nowTimeDisplay.innerText = `${curH}:${curM}`;
+    }
+
     this.eveningModal.classList.add('active');
   }
 
@@ -802,40 +834,57 @@ class BrainRhythmScheduler {
     this.eveningVoiceText.innerText = '语音输入';
   }
 
-  // 启发式认知节律排程算法
-  generateHeuristicSchedule() {
-    const rawText = this.eveningTasksInput.value.trim();
-    if (!rawText) {
-      alert('请先输入或说出明天要做的事情哦！');
-      return;
+  // ----------------------------------------------------
+  // 自然语言多任务智能解析器 (支持单句顿号/逗号连缀与多行)
+  // ----------------------------------------------------
+  parseInputTasks(rawText) {
+    let text = rawText
+      .replace(/一个半小时/g, '1.5小时')
+      .replace(/两个半小时/g, '2.5小时')
+      .replace(/半小时/g, '30分钟')
+      .replace(/一刻钟/g, '15分钟')
+      .replace(/大半天/g, '3小时');
+
+    const cnNums = {
+      '一个': '1', '两个': '2', '三个': '3', '四个': '4', '五个': '5', '六个': '6', '七个': '7', '八个': '8',
+      '一': '1', '两': '2', '二': '2', '三': '3', '四': '4', '五': '5', '六': '6', '七': '7', '八': '8', '九': '9', '十': '10'
+    };
+    for (const [k, v] of Object.entries(cnNums)) {
+      text = text.replace(new RegExp(`${k}\\s*(?:个)?\\s*(小时|h|hr|分钟|分|m|min)`, 'gi'), `${v}$1`);
     }
 
-    const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    // 智能多维度拆分：支持换行、顿号、分号、逗号、句号，以及还要/然后/接着等连词
+    const delimiters = /[\n\r;；。]+|(?:[，,、]|还要|然后|接着|再|并且|其次|最后)\s*/g;
+    const rawChunks = text.split(delimiters);
+
     const parsedTasks = [];
 
-    // 关键字归类与时长推导词典
-    const deepKeywords = ['论文', '论证', '核心', '攻坚', '深度', '算法', '代码', '写作', '考研', '难题', '复习', '专心', '研究', '策划', '思考', '分析'];
+    const deepKeywords = ['高数', '代数', '数学', '论文', '论证', '核心', '攻坚', '深度', '算法', '代码', '编程', 'python', 'java', 'c++', '写作', '考研', '难题', '专心', '研究', '思考', '分析'];
     const meetingKeywords = ['会', '组会', '沟通', '讨论', '协作', '汇报', '面试', '电话', '同步', '对齐', '客户'];
-    const sportsKeywords = ['跑', '健身', '运动', '有氧', '拉伸', '球', '散步', '走', '发散', '脑暴', '创意', '灵感', '设计', '构思'];
+    const sportsKeywords = ['跑', '健身', '运动', '有氧', '拉伸', '散步', '走', '发散', '脑暴', '创意', '灵感', '设计', '构思'];
     const routineKeywords = ['邮件', '表格', '下载', '整理', '打扫', '收拾', '报销', '买', '采购', '缴费', '快递', '琐碎'];
-    const reviewKeywords = ['复盘', '总结', '复盘今日', '艾宾浩斯', '回顾', '笔记'];
+    const reviewKeywords = ['复盘', '复习', '总结', '艾宾浩斯', '回顾', '笔记'];
 
-    lines.forEach((line, idx) => {
-      // 提取时长估算 (如 "2小时", "45分钟", "1h", "30m")
+    rawChunks.forEach((chunk, idx) => {
+      let c = chunk.trim();
+      if (!c || c.length < 2) return;
+
+      // 提取时长估算 (如 "3 个小时", "3h", "45分钟", "45分")
       let durationMins = 45;
-      const hourMatch = line.match(/(\d+(\.\d+)?)\s*(小时|个半小时|h|hr)/i);
-      const minMatch = line.match(/(\d+)\s*(分钟|分|m|min)/i);
+      const hourMatch = c.match(/(\d+(?:\.\d+)?)\s*(?:个)?\s*(?:小时|h|hr)/i);
+      const minMatch = c.match(/(\d+)\s*(?:分钟|分|m|min)/i);
+
       if (hourMatch) {
         durationMins = Math.round(parseFloat(hourMatch[1]) * 60);
       } else if (minMatch) {
         durationMins = parseInt(minMatch[1], 10);
       }
 
-      // 提取指定时间 (如 "下午3点", "15:00", "上午9点半")
+      // 提取指定固定时间点 (如 "下午3点", "15:00")
       let fixedStart = null;
-      const timeMatch1 = line.match(/(上午|下午|晚上)?\s*(\d{1,2})[:：](\d{2})/);
-      const timeMatch2 = line.match(/(下午|晚上)\s*(\d{1,2})\s*点/);
-      const timeMatch3 = line.match(/(上午)\s*(\d{1,2})\s*点/);
+      const timeMatch1 = c.match(/(上午|下午|晚上)?\s*(\d{1,2})[:：](\d{2})/);
+      const timeMatch2 = c.match(/(下午|晚上)\s*(\d{1,2})\s*点/);
+      const timeMatch3 = c.match(/(上午)\s*(\d{1,2})\s*点/);
 
       if (timeMatch1) {
         let h = parseInt(timeMatch1[2], 10);
@@ -851,34 +900,70 @@ class BrainRhythmScheduler {
         fixedStart = `${String(h).padStart(2, '0')}:00`;
       }
 
-      // 判定认知分类
-      let category = 'agile_exec';
-      const cleanTitle = line.replace(/(\(.*?\)|（.*?）|\d+\s*(小时|分钟|分|h|m)|下午\s*\d+\s*点|上午\s*\d+\s*点)/g, '').trim();
+      // 清理纯标题
+      let cleanTitle = c
+        .replace(/^(我写了|我要|我打算|我准备|要|需要|打算|计划|准备|还要|想|去)\s*/, '')
+        .replace(/\d+(?:\.\d+)?\s*(?:个)?\s*(?:小时|分钟|分|h|hr|m|min)/gi, '')
+        .replace(/(上午|下午|晚上)?\s*\d{1,2}([:：]\d{2}|点)/g, '')
+        .replace(/[，,、。！？\s]+$/, '')
+        .trim();
 
-      if (deepKeywords.some(k => line.includes(k))) {
-        category = 'deep_work';
-      } else if (sportsKeywords.some(k => line.includes(k))) {
-        category = 'creative_fitness';
-      } else if (routineKeywords.some(k => line.includes(k))) {
-        category = 'low_routine';
-      } else if (reviewKeywords.some(k => line.includes(k))) {
-        category = 'review_winddown';
-      } else if (meetingKeywords.some(k => line.includes(k))) {
+      if (!cleanTitle) cleanTitle = c;
+
+      // 判定认知分类
+      let category = 'deep_work';
+      const lower = cleanTitle.toLowerCase();
+      if (meetingKeywords.some(k => lower.includes(k))) {
         category = 'agile_exec';
+      } else if (sportsKeywords.some(k => lower.includes(k))) {
+        category = 'creative_fitness';
+      } else if (routineKeywords.some(k => lower.includes(k))) {
+        category = 'low_routine';
+      } else if (reviewKeywords.some(k => lower.includes(k))) {
+        category = 'review_winddown';
+      } else if (deepKeywords.some(k => lower.includes(k))) {
+        category = 'deep_work';
       }
 
       parsedTasks.push({
         id: `gen-${Date.now()}-${idx}`,
-        title: cleanTitle || line,
+        title: cleanTitle,
         category,
         durationMins,
         fixedStart,
-        notes: `根据人脑【${CATEGORY_MAP[category].name}】节律推荐排期`
+        notes: `计划专注时长：${durationMins >= 60 ? (durationMins / 60) + '小时' : durationMins + '分钟'}`
       });
     });
 
-    // 智能排槽：将任务分配到全天的黄金认知时段中
-    const scheduled = this.slotTasksIntoCircadian(parsedTasks);
+    return parsedTasks;
+  }
+
+  // ----------------------------------------------------
+  // 启发式认知节律排程算法 (生成排程预览)
+  // ----------------------------------------------------
+  generateHeuristicSchedule() {
+    const rawText = this.eveningTasksInput.value.trim();
+    if (!rawText) {
+      alert('请先输入或说出要安排的任务哦！');
+      return;
+    }
+
+    const parsedTasks = this.parseInputTasks(rawText);
+    if (parsedTasks.length === 0) {
+      alert('未能解析出具体任务，请写下具体任务名称和大概时长（如：学习高数 3小时）');
+      return;
+    }
+
+    const isTomorrowMode = this.modeTomorrow && this.modeTomorrow.checked;
+    this.currentSchedulingMode = isTomorrowMode ? 'tomorrow' : 'now';
+
+    let scheduled = [];
+    if (isTomorrowMode) {
+      scheduled = this.slotTasksTomorrow(parsedTasks);
+    } else {
+      scheduled = this.slotTasksFromNow(parsedTasks);
+    }
+
     this.generatedSchedule = scheduled;
 
     // 渲染预览界面
@@ -895,29 +980,96 @@ class BrainRhythmScheduler {
       this.previewSlotsList.appendChild(el);
     });
 
+    if (this.previewSummaryBadge) {
+      this.previewSummaryBadge.innerText = `已解析 ${parsedTasks.length} 项用户任务 · 100% 完整排布`;
+    }
+
     this.schedulePreviewBox.style.display = 'block';
     this.confirmApplyPlanBtn.style.display = 'inline-flex';
     this.previewPlanBtn.style.display = 'none';
-    this.showToast('🧠 已按照人脑节律生成排程预览！');
+
+    const modeDesc = isTomorrowMode ? '明日全天' : '此时刻即时';
+    this.showToast(`🧠 已按【${modeDesc}】模式生成科学排程！`);
   }
 
-  slotTasksIntoCircadian(tasks) {
-    const wakeStr = this.planWakeTime.value || '07:30';
+  // 模式一：从发送的这一刻起立即开始执行并倒计时 (白天即刻排程)
+  slotTasksFromNow(tasks) {
+    const now = new Date();
+    const curH = String(now.getHours()).padStart(2, '0');
+    const curM = String(now.getMinutes()).padStart(2, '0');
+    let pointer = `${curH}:${curM}`;
+
     const result = [];
 
-    // 固定时段优先
-    const fixedTasks = tasks.filter(t => t.fixedStart);
-    const unallocated = tasks.filter(t => !t.fixedStart);
+    function addMins(timeStr, mins) {
+      const [h, m] = timeStr.split(':').map(Number);
+      const total = h * 60 + m + mins;
+      const nh = Math.floor(total / 60) % 24;
+      const nm = total % 60;
+      return `${String(nh).padStart(2, '0')}:${String(nm).padStart(2, '0')}`;
+    }
 
-    // 认知队列分组
-    const deepQueue = unallocated.filter(t => t.category === 'deep_work');
-    const agileQueue = unallocated.filter(t => t.category === 'agile_exec');
-    const sportsQueue = unallocated.filter(t => t.category === 'creative_fitness');
-    const routineQueue = unallocated.filter(t => t.category === 'low_routine');
-    const reviewQueue = unallocated.filter(t => t.category === 'review_winddown');
+    function timeToMinutes(timeStr) {
+      const [h, m] = timeStr.split(':').map(Number);
+      return h * 60 + m;
+    }
 
-    // 辅助时间累加函数
-    function addMinutes(timeStr, mins) {
+    let dinnerInserted = false;
+
+    tasks.forEach((task, idx) => {
+      // 跨越晚饭时段 (18:00 - 19:30) 时自动插入贴心的晚餐休整
+      const pointerMins = timeToMinutes(pointer);
+      if (!dinnerInserted && pointerMins >= 18 * 60 && pointerMins <= 19 * 60 + 30) {
+        const dinnerEnd = addMins(pointer, 45);
+        result.push({
+          id: `slot-dinner-${Date.now()}`,
+          title: '🍲 晚餐充能与身心重置',
+          startTime: pointer,
+          endTime: dinnerEnd,
+          category: 'life_recharge',
+          notes: '顺应消化生理节律，补充体能，放松神经系统',
+          completed: false
+        });
+        pointer = dinnerEnd;
+        dinnerInserted = true;
+      }
+
+      const taskEnd = addMins(pointer, task.durationMins);
+      result.push({
+        ...task,
+        startTime: pointer,
+        endTime: taskEnd,
+        completed: false
+      });
+
+      // 任务后的科学间歇缓冲 (避免大脑连续过度疲劳)
+      if (idx < tasks.length - 1) {
+        const breakMins = task.durationMins >= 90 ? 15 : 10;
+        const breakEnd = addMins(taskEnd, breakMins);
+        result.push({
+          id: `slot-break-${Date.now()}-${idx}`,
+          title: '☕ 脑疲劳缓解与眼部放松',
+          startTime: taskEnd,
+          endTime: breakEnd,
+          category: 'low_routine',
+          notes: '远眺放松睫状肌、深呼吸补水，恢复前额叶神经递质',
+          completed: false
+        });
+        pointer = breakEnd;
+      } else {
+        pointer = taskEnd;
+      }
+    });
+
+    return result;
+  }
+
+  // 模式二：明日全天认知节律完整排布 (零遗漏算法)
+  slotTasksTomorrow(tasks) {
+    const wakeStr = (this.planWakeTime && this.planWakeTime.value) || '07:30';
+    const result = [];
+
+    function addMins(timeStr, mins) {
       const [h, m] = timeStr.split(':').map(Number);
       const total = h * 60 + m + mins;
       const nh = Math.floor(total / 60) % 24;
@@ -930,125 +1082,97 @@ class BrainRhythmScheduler {
       id: `slot-wake-${Date.now()}`,
       title: '晨起补水、拉伸与今日计划梳理',
       startTime: wakeStr,
-      endTime: addMinutes(wakeStr, 45),
+      endTime: addMins(wakeStr, 45),
       category: 'life_recharge',
       notes: '皮质醇唤醒期，温水唤醒肠胃与大脑，清爽启动',
       completed: false
     });
 
-    // 2. 08:30 深度攻坚窗口 (Eat That Frog!)
+    const queue = [...tasks];
+
+    // 2. 上午黄金攻坚窗口 (08:30 起步，分配高脑力任务)
     let curTime = '08:30';
-    while (deepQueue.length > 0 && curTime < '11:30') {
-      const t = deepQueue.shift();
-      const end = addMinutes(curTime, t.durationMins);
-      result.push({
-        ...t,
-        startTime: curTime,
-        endTime: end,
-        completed: false
-      });
-      curTime = addMinutes(end, 10); // 间隔 10 分钟眼脑放松
+    while (queue.length > 0 && curTime < '11:45') {
+      const t = queue.shift();
+      const end = addMins(curTime, t.durationMins);
+      result.push({ ...t, startTime: curTime, endTime: end, completed: false });
+      curTime = addMins(end, 10);
     }
 
-    // 3. 12:00 午餐与午后低谷小憩
+    // 3. 午餐与午后小憩 (12:00 - 13:30)
     result.push({
       id: `slot-lunch-${Date.now()}`,
       title: '营养午餐与 20 分钟能量小憩 (Power Nap)',
       startTime: '12:00',
       endTime: '13:30',
       category: 'low_routine',
-      notes: '顺应消化低谷，20分钟闭目养神，恢复后半天战斗力',
+      notes: '顺应午后生理低谷，20分钟闭目养神，恢复下半天脑力',
       completed: false
     });
 
-    // 4. 13:30 - 14:00 琐碎处理窗口
-    curTime = '13:30';
-    while (routineQueue.length > 0 && curTime < '14:00') {
-      const t = routineQueue.shift();
-      const end = addMinutes(curTime, Math.min(t.durationMins, 25));
-      result.push({
-        ...t,
-        startTime: curTime,
-        endTime: end,
-        completed: false
-      });
-      curTime = end;
-    }
-
-    // 5. 14:00 敏捷执行与协同窗口
+    // 4. 下午敏捷执行与二次高峰 (14:00 起步)
     curTime = '14:00';
-    while ((agileQueue.length > 0 || deepQueue.length > 0) && curTime < '16:30') {
-      const t = agileQueue.shift() || deepQueue.shift();
-      const end = addMinutes(curTime, t.durationMins);
-      result.push({
-        ...t,
-        startTime: curTime,
-        endTime: end,
-        completed: false
-      });
-      curTime = addMinutes(end, 10);
+    while (queue.length > 0 && curTime < '17:30') {
+      const t = queue.shift();
+      const end = addMins(curTime, t.durationMins);
+      result.push({ ...t, startTime: curTime, endTime: end, completed: false });
+      curTime = addMins(end, 10);
     }
 
-    // 6. 16:30 运动健身与发散创意窗口
-    curTime = '16:45';
-    while (sportsQueue.length > 0 && curTime < '18:30') {
-      const t = sportsQueue.shift();
-      const end = addMinutes(curTime, t.durationMins);
-      result.push({
-        ...t,
-        startTime: curTime,
-        endTime: end,
-        completed: false
-      });
-      curTime = end;
+    // 5. 晚餐生活休整 (18:00 - 19:15)
+    result.push({
+      id: `slot-dinner-${Date.now()}`,
+      title: '晚餐充能与生活休整',
+      startTime: '18:00',
+      endTime: '19:15',
+      category: 'life_recharge',
+      notes: '放下工作学习，享受美食与生活',
+      completed: false
+    });
+
+    // 6. 晚间复盘与剩余任务消化 (19:30 起步，彻底消化全部剩余任务，绝不丢弃)
+    curTime = '19:30';
+    while (queue.length > 0) {
+      const t = queue.shift();
+      const end = addMins(curTime, t.durationMins);
+      result.push({ ...t, startTime: curTime, endTime: end, completed: false });
+      curTime = addMins(end, 10);
     }
 
-    // 7. 20:00 记忆复盘与温和总结
-    curTime = '20:00';
-    while ((reviewQueue.length > 0 || routineQueue.length > 0) && curTime < '21:30') {
-      const t = reviewQueue.shift() || routineQueue.shift();
-      const end = addMinutes(curTime, t.durationMins);
-      result.push({
-        ...t,
-        startTime: curTime,
-        endTime: end,
-        completed: false
-      });
-      curTime = end;
-    }
-
-    // 8. 睡前大脑倾倒
+    // 7. 睡前放松与明日计划
     result.push({
       id: `slot-night-${Date.now()}`,
-      title: '🌙 晚间大脑倾倒 (Brain Dump) & 明日排程',
-      startTime: '21:45',
-      endTime: '22:15',
+      title: '🌙 睡前放松与明日计划',
+      startTime: '22:00',
+      endTime: '22:30',
       category: 'review_winddown',
-      notes: '记录明日要事清空杂念，远离蓝光屏幕，安心睡眠',
+      notes: '清空杂念，远离屏幕，安心睡眠',
       completed: false
     });
 
-    // 放入固定时间的项
-    fixedTasks.forEach(ft => {
-      result.push({
-        ...ft,
-        startTime: ft.fixedStart,
-        endTime: addMinutes(ft.fixedStart, ft.durationMins),
-        completed: false
-      });
-    });
-
-    // 按照开始时间排序
     return result.sort((a, b) => a.startTime.localeCompare(b.startTime));
   }
 
+  // ----------------------------------------------------
+  // 应用排程并立即生效 (如果即刻模式则秒开倒计时)
+  // ----------------------------------------------------
   applyGeneratedSchedule() {
     if (!this.generatedSchedule || this.generatedSchedule.length === 0) return;
     this.tasks = this.generatedSchedule;
     this.saveTasks();
     this.renderAll();
     this.closeEveningModal();
-    this.showToast('🚀 明日人脑黄金节律日程已成功载入！');
+
+    if (this.currentSchedulingMode === 'now') {
+      // 即刻启动计时器
+      this.resetTimer();
+      this.toggleTimer();
+      this.playBellChime();
+      const firstTask = this.tasks[0];
+      this.showToast(`🚀 已从此时刻开启日程！首项「${firstTask.title}」已进入倒计时！`);
+    } else {
+      this.showToast('🚀 明日全天认知节律日程已成功载入！');
+    }
   }
 
   // ----------------------------------------------------
