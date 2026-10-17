@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>脑波时钟 · 认知节律日程助手</title>
+  
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  
+  <!-- PWA & Desktop Meta -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="脑波日程">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="app-layout" id="appLayout">
+    
+    <!-- 顶部主导航栏 -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="brand-logo" id="logoWidgetBtn" title="脑波时钟">
+          <!-- 脑电波与时钟融合 SVG -->
+          <svg viewBox="0 0 100 100" fill="none">
+            <defs>
+              <linearGradient id="logoGrad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#6366f1"/>
+                <stop offset="1" stop-color="#10b981"/>
+              </linearGradient>
+            </defs>
+            <rect width="100" height="100" rx="28" fill="url(#logoGrad)"/>
+            <!-- 脑电波线 -->
+            <path d="M18 52 L32 52 L38 34 L46 68 L54 24 L62 76 L68 45 L74 52 L82 52" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- 钟表中心光点 -->
+            <circle cx="54" cy="50" r="3.5" fill="#fef08a"/>
+          </svg>
+        </div>
+        <div class="brand-meta">
+          <h1 class="brand-title">脑波时钟 <span class="brand-subbadge">认知节律</span></h1>
+          <div class="live-clock-wrapper">
+            <span class="live-time" id="headerLiveTime">--:--:--</span>
+            <span class="live-date" id="headerLiveDate">--月--日 星期-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <!-- 实时大脑认知节律能量状态指示牌 -->
+        <div class="energy-status-pill" id="currentEnergyPill">
+          <span class="pulse-dot"></span>
+          <span class="energy-pill-phase" id="energyPhaseText">正在评估脑力节律...</span>
+          <span class="energy-pill-tip" id="energyTipText"></span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- 晚间规划按钮 -->
+        <button class="btn btn-primary evening-plan-btn" id="openEveningPlanBtn" title="每晚录入明天任务，智能排程">
+          <span class="btn-icon">🌙</span>
+          <span class="btn-text">晚间规划</span>
+        </button>
+
+        <!-- 导入 AI 对话日程 -->
+        <button class="icon-btn" id="openImportModalBtn" title="导入 AI 对话中规划的日程">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+        </button>
+
+        <!-- 桌面挂件模式切换 (Mac/PC 极简桌面窄看板) -->
+        <button class="icon-btn" id="toggleMiniWidgetBtn" title="切换为桌面小挂件模式">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+          </svg>
+        </button>
+
+        <!-- 白天/黑夜切换 -->
+        <button class="icon-btn" id="themeToggleBtn" title="切换主题">
+          <svg id="themeIconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg id="themeIconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- 主界面内容区 -->
+    <main class="app-main">
+      
+      <!-- 1. 当前焦点 Hero 任务看板 (Now Focus Block) -->
+      <section class="focus-hero-card" id="focusHeroCard">
+        <div class="focus-hero-header">
+          <div class="focus-hero-tag" id="heroTaskTag">🎯 当前执行焦点</div>
+          <div class="focus-hero-slot" id="heroTaskTimeSlot">--:-- ~ --:--</div>
+        </div>
+
+        <div class="focus-hero-body">
+          <div class="focus-hero-content">
+            <h2 class="focus-hero-title" id="heroTaskTitle">准备开启高效一天</h2>
+            <p class="focus-hero-notes" id="heroTaskNotes">点击“晚间规划”录入明日任务，系统将按人脑黄金节律智能规划！</p>
+          </div>
+
+          <div class="focus-hero-timer-box">
+            <div class="timer-display" id="heroTimerDisplay">--:--</div>
+            <div class="timer-label" id="heroTimerLabel">剩余时间</div>
+          </div>
+        </div>
+
+        <div class="focus-hero-footer">
+          <div class="focus-controls">
+            <!-- 专注计时器控制 -->
+            <button class="btn btn-secondary btn-sm" id="heroTimerToggleBtn">
+              <span id="heroTimerToggleIcon">▶</span> <span id="heroTimerToggleText">开始计时</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" id="heroTimerResetBtn" title="重置计时">
+              ↺ 重置
+            </button>
+            <!-- 432Hz Alpha 脑波纯音频专注伴奏 -->
+            <button class="btn btn-secondary btn-sm" id="heroAlphaAudioBtn" title="播放/暂停 432Hz Alpha 专注脑波伴奏">
+              🎵 脑波音: 关
+            </button>
+          </div>
+
+          <button class="btn btn-primary btn-done" id="heroCompleteBtn">
+            ✅ 完成此任务
+          </button>
+        </div>
+      </section>
+
+      <!-- 2. 全天人脑认知节律能量带 (Circadian Cognitive Rhythm Bar) -->
+      <section class="rhythm-curve-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <h3 class="section-title">人脑认知节律黄金带</h3>
+            <span class="section-subtitle">基于皮质醇、体温与超昼夜节律 (Ultradian Rhythm) 分布</span>
+          </div>
+          <div class="rhythm-legend">
+            <span class="legend-item"><span class="legend-dot deep"></span> 08:30-11:30 黄金攻坚 (前额叶最活跃)</span>
+            <span class="legend-item"><span class="legend-dot agile"></span> 14:00-16:30 敏捷执行</span>
+            <span class="legend-item"><span class="legend-dot creative"></span> 16:30-18:30 运动发散</span>
+            <span class="legend-item"><span class="legend-dot dip"></span> 13:00-14:00 生理低谷</span>
+          </div>
+        </div>
+
+        <!-- 视觉化色带与当前指针 -->
+        <div class="rhythm-bar-container">
+          <div class="rhythm-bar-segments">
+            <div class="rhythm-seg seg-wake" style="flex: 1.5;" title="07:00-08:30 晨光唤醒 / 低负荷梳理">
+              <span class="seg-time">07:00</span>
+              <span class="seg-name">晨唤醒</span>
+            </div>
+            <div class="rhythm-seg seg-deep" style="flex: 3;" title="08:30-11:30 👑 黄金攻坚最高峰 (吞掉那只青蛙)">
+              <span class="seg-time">08:30</span>
+              <span class="seg-name">👑 深度攻坚</span>
+            </div>
+            <div class="rhythm-seg seg-trans" style="flex: 1.5;" title="11:30-13:00 能量过渡与午餐">
+              <span class="seg-time">11:30</span>
+              <span class="seg-name">能量充能</span>
+            </div>
+            <div class="rhythm-seg seg-dip" style="flex: 1;" title="13:00-14:00 💤 生理低谷与小憩 (Power Nap)">
+              <span class="seg-time">13:00</span>
+              <span class="seg-name">💤 低谷小憩</span>
+            </div>
+            <div class="rhythm-seg seg-agile" style="flex: 2.5;" title="14:00-16:30 🚀 敏捷执行与协同沟通">
+              <span class="seg-time">14:00</span>
+              <span class="seg-name">🚀 敏捷推进</span>
+            </div>
+            <div class="rhythm-seg seg-creative" style="flex: 2;" title="16:30-18:30 🎨 运动健身与发散灵感">
+              <span class="seg-time">16:30</span>
+              <span class="seg-name">🎨 运动创意</span>
+            </div>
+            <div class="rhythm-seg seg-evening" style="flex: 1.5;" title="18:30-20:00 晚餐生活休整">
+              <span class="seg-time">18:30</span>
+              <span class="seg-name">生活休整</span>
+            </div>
+            <div class="rhythm-seg seg-review" style="flex: 1.5;" title="20:00-21:30 📖 温和反思与记忆整合">
+              <span class="seg-time">20:00</span>
+              <span class="seg-name">📖 复盘整合</span>
+            </div>
+            <div class="rhythm-seg seg-sleep" style="flex: 1;" title="21:30-22:30 🌙 睡前清空规划与入眠">
+              <span class="seg-time">21:30</span>
+              <span class="seg-name">🌙 清空明日</span>
+            </div>
+          </div>
+          <!-- 实时时间红线指示器 -->
+          <div class="rhythm-now-cursor" id="rhythmNowCursor" style="left: 0%;">
+            <div class="cursor-flag">NOW</div>
+            <div class="cursor-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 全天日程流与任务清单 (Schedule Timeline Board) -->
+      <section class="schedule-stream-section">
+        <div class="schedule-stream-header">
+          <div class="stream-title-group">
+            <h3 class="section-title">今日日程流水线</h3>
+            <span class="stream-counter" id="streamCounterBadge">0 / 0 已完成</span>
+          </div>
+
+          <div class="stream-actions">
+            <div class="filter-pills">
+              <button class="filter-pill active" data-filter="all">全部</button>
+              <button class="filter-pill" data-filter="pending">待执行</button>
+              <button class="filter-pill" data-filter="done">已完成</button>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="addNewTaskBtn">
+              ➕ 添加任务
+            </button>
+          </div>
+        </div>
+
+        <!-- 任务列表容器 -->
+        <div class="tasks-timeline-list" id="tasksTimelineList">
+          <!-- 动态渲染的任务卡片 -->
+        </div>
+
+        <!-- 空日程引导状态 -->
+        <div class="empty-schedule-state" id="emptyScheduleState" style="display:none;">
+          <div class="empty-icon">🗓️</div>
+          <h4>暂无今日日程安排</h4>
+          <p>每晚点击上方「🌙 晚间规划」，输入您明天的任务列表，脑科学引擎将为您自动排好全天日程！</p>
+          <div style="display:flex; gap:10px; justify-content:center; margin-top:14px;">
+            <button class="btn btn-primary" onclick="window.schedulerApp.openEveningModal()">
+              🌙 开启晚间规划排程
+            </button>
+            <button class="btn btn-secondary" onclick="window.schedulerApp.loadDemoSchedule()">
+              🪄 载入示范日程
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- 极简桌面小挂件悬浮视图 (Mini Desktop Widget View) -->
+    <aside class="mini-widget-panel" id="miniWidgetPanel">
+      <div class="mini-widget-topbar">
+        <div class="mini-widget-title">
+          <span class="mini-pulse-dot"></span>
+          <span>脑波时钟看板</span>
+        </div>
+        <div class="mini-widget-actions">
+          <button class="mini-btn" id="miniExpandBtn" title="恢复完整窗口">⤢ 完整</button>
+        </div>
+      </div>
+
+      <div class="mini-time-row">
+        <span class="mini-clock" id="miniLiveClock">--:--</span>
+        <span class="mini-phase-badge" id="miniPhaseBadge">深度专注</span>
+      </div>
+
+      <div class="mini-current-task-box">
+        <div class="mini-task-label">正在进行</div>
+        <div class="mini-task-title" id="miniTaskTitle">暂无任务</div>
+        <div class="mini-task-slot" id="miniTaskSlot">--:-- ~ --:--</div>
+        <div class="mini-task-timer" id="miniTaskTimer">--:--</div>
+        <button class="btn btn-primary mini-done-btn" id="miniDoneBtn">
+          ✅ 完成
+        </button>
+      </div>
+
+      <div class="mini-upcoming-box">
+        <div class="mini-upcoming-label">下一个节点</div>
+        <div class="mini-upcoming-title" id="miniUpcomingTitle">无即将进行的任务</div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- 模态弹窗 1: 🌙 晚间大脑倾倒与脑科学智能排程 (Evening Brain Dump) -->
+  <!-- ==================================================== -->
+  <div class="modal-overlay" id="eveningModal">
+    <div class="modal-card evening-modal-card">
+      <div class="modal-header">
+        <div class="modal-header-icon">🌙</div>
+        <div>
+          <h2 class="modal-title">晚间大脑倾倒 (Brain Dump) & 智能排程</h2>
+          <p class="modal-subtitle">把明天的任务随意写下或说话录入，脑科学算法将自动按人脑黄金节律科学排位！</p>
+        </div>
+        <button class="modal-close-btn" id="closeEveningModalBtn">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="evening-guide-tip">
+          💡 <strong>科学依据</strong>：睡前将未决任务完整清空写出，可消除“蔡加尼克效应”的大脑后台焦躁，带来高质量深度睡眠；算法会自动把<strong>最难的攻坚攻关</strong>安排在次日上午 08:30~11:30 黄金期。
+        </div>
+
+        <div class="evening-input-wrapper">
+          <div class="input-tools-bar">
+            <span class="input-tool-label">明天要做的事情（每行一个任务，可带时间预估）：</span>
+            <!-- 语音录音麦克风 -->
+            <button class="btn btn-secondary btn-sm voice-input-btn" id="eveningVoiceBtn" type="button">
+              <span id="eveningVoiceIcon">🎙️</span> <span id="eveningVoiceText">语音输入</span>
+            </button>
+          </div>
+          <textarea class="evening-textarea" id="eveningTasksInput" rows="7" placeholder="例如：
+写毕业论文第二章核心论证 (需2小时)
+下午3点和团队开组会 (45分钟)
+考研单词背诵 60 个
+健身房跑步 5 公里
+回复导师邮件与下载表格
+晚上整理书桌与明日计划"></textarea>
+          
+          <div class="preset-chips-row">
+            <span class="chips-label">快速点击添加模版：</span>
+            <button class="chip-btn" data-text="深度攻坚学习/工作 (2小时)">🧠 深度学习 (2h)</button>
+            <button class="chip-btn" data-text="重要会议/事务沟通 (1小时)">💬 团队会议 (1h)</button>
+            <button class="chip-btn" data-text="有氧跑步/力量健身 (45分钟)">🏃 运动健身 (45m)</button>
+            <button class="chip-btn" data-text="今日知识温和复盘 (40分钟)">📚 记忆复盘 (40m)</button>
+            <button class="chip-btn" data-text="回复邮件整理文档等琐事 (30分钟)">📋 整理琐事 (30m)</button>
+          </div>
+        </div>
+
+        <!-- 起床与就寝微调 -->
+        <div class="rhythm-time-adjust">
+          <div class="time-adjust-item">
+            <label>🌅 明天预定起床时间：</label>
+            <input type="time" id="planWakeTime" value="07:30" class="time-input">
+          </div>
+          <div class="time-adjust-item">
+            <label>🌙 预定就寝时间：</label>
+            <input type="time" id="planSleepTime" value="23:00" class="time-input">
+          </div>
+        </div>
+
+        <!-- 智能排程预览区 (点击排程后出现) -->
+        <div class="schedule-preview-box" id="schedulePreviewBox" style="display:none;">
+          <h4 class="preview-title">🧠 脑科学智能排程预览：</h4>
+          <div class="preview-slots-list" id="previewSlotsList"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="previewPlanBtn">
+          🧠 智能算法排程
+        </button>
+        <button class="btn btn-primary" id="confirmApplyPlanBtn" style="display:none;">
+          🚀 确认载入明日日程
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- 模态弹窗 2: 📥 导入 AI 对话中规划的日程 -->
+  <!-- ==================================================== -->
+  <div class="modal-overlay" id="importModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-header-icon">📥</div>
+        <div>
+          <h2 class="modal-title">导入 AI 规划日程</h2>
+          <p class="modal-subtitle">粘贴在当前对话中由我为您排好的日程代码或文本</p>
+        </div>
+        <button class="modal-close-btn" id="closeImportModalBtn">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 10px;">
+          您可以随时在对话中告诉我明天要做的事，我会用脑科学最佳时机为您排好方案。将生成的日程内容复制粘贴在下方即可一键导入：
+        </p>
+        <textarea class="evening-textarea" id="importJsonInput" rows="8" placeholder="在此粘贴 AI 发给您的日程文本或 JSON 代码块..."></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelImportBtn">取消</button>
+        <button class="btn btn-primary" id="doImportBtn">立即解析并载入</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- 模态弹窗 3: ➕ 单项任务编辑/添加弹窗 -->
+  <!-- ==================================================== -->
+  <div class="modal-overlay" id="taskEditModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-header-icon">📝</div>
+        <div>
+          <h2 class="modal-title" id="editModalTitle">添加/编辑日程任务</h2>
+          <p class="modal-subtitle">自定义时间与人脑认知负荷类型</p>
+        </div>
+        <button class="modal-close-btn" id="closeTaskEditModalBtn">✕</button>
+      </div>
+
+      <form id="taskEditForm" class="modal-body">
+        <input type="hidden" id="editTaskId">
+        
+        <div class="form-group">
+          <label>任务名称 <span style="color:var(--rose)">*</span></label>
+          <input type="text" id="editTaskTitle" class="form-input" required placeholder="例如：研读专业论文第 4 节">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex:1;">
+            <label>开始时间</label>
+            <input type="time" id="editTaskStart" class="form-input" required value="09:00">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>结束时间</label>
+            <input type="time" id="editTaskEnd" class="form-input" required value="10:30">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>脑科学认知属性分类</label>
+          <select id="editTaskCategory" class="form-input">
+            <option value="deep_work">🧠 深度攻坚 (推荐 08:30-11:30 · 需最高前额叶专注)</option>
+            <option value="agile_exec">🚀 敏捷执行与协同 (推荐 14:00-16:30 · 适合推进与会议)</option>
+            <option value="creative_fitness">🎨 运动健身与发散创意 (推荐 16:30-18:30 · 体温峰值)</option>
+            <option value="low_routine">☕ 琐碎整理与低谷事务 (推荐 13:00-14:00 · 机械处理)</option>
+            <option value="review_winddown">📖 温和复盘与记忆整合 (推荐 20:00-21:30 · 睡前沉淀)</option>
+            <option value="life_recharge">🌱 晨光清醒 / 饮食充能</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>补充备注 / 要点</label>
+          <textarea id="editTaskNotes" class="form-input" rows="2" placeholder="可选备注信息..."></textarea>
+        </div>
+
+        <div class="modal-footer" style="padding:0; margin-top:20px;">
+          <button type="button" class="btn btn-secondary" id="cancelTaskEditBtn">取消</button>
+          <button type="submit" class="btn btn-primary">保存任务</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
