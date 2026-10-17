@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>艾宾浩斯复习助手 · 记忆萌喵</title>
+  
+  <!-- 隐私保护：禁止所有搜索引擎抓取收录 -->
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  
+  <!-- PWA & Mobile Web App Meta -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#10b981">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="艾宾复习">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- 顶部导航栏 -->
+  <header class="app-header">
+    <div class="brand-wrapper">
+      <div class="brand-logo-mascot" id="headerMascotLogo" title="点击召唤记忆萌喵">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="50" r="46" fill="#10b981"/>
+          <!-- 耳朵 -->
+          <polygon points="25,25 35,46 16,42" fill="#fed7aa"/>
+          <polygon points="75,25 84,42 65,46" fill="#fed7aa"/>
+          <!-- 脸部 -->
+          <ellipse cx="50" cy="55" rx="34" ry="28" fill="#ffffff"/>
+          <!-- 眼睛 -->
+          <circle cx="38" cy="50" r="5" fill="#1e293b"/>
+          <circle cx="62" cy="50" r="5" fill="#1e293b"/>
+          <circle cx="36" cy="48" r="1.8" fill="#ffffff"/>
+          <circle cx="60" cy="48" r="1.8" fill="#ffffff"/>
+          <!-- 腮红 -->
+          <ellipse cx="30" cy="58" rx="4.5" ry="2.5" fill="#fda4af"/>
+          <ellipse cx="70" cy="58" rx="4.5" ry="2.5" fill="#fda4af"/>
+          <!-- 鼻子与小嘴 -->
+          <polygon points="50,56 46,60 54,60" fill="#f59e0b"/>
+          <path d="M46 62 Q50 65 54 62" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+          <!-- 博士学士帽 -->
+          <polygon points="50,15 80,24 50,33 20,24" fill="#0f172a"/>
+          <circle cx="50" cy="24" r="2.5" fill="#f59e0b"/>
+          <line x1="50" y1="24" x2="72" y2="34" stroke="#f59e0b" stroke-width="1.8"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="brand-title">艾宾复习 · 记忆萌喵</h1>
+        <p class="brand-subtitle">艾宾浩斯智能间隔记忆系统</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- 隐私锁屏按钮 -->
+      <button class="icon-btn" id="lockAppBtn" title="锁定应用 (需要密码解锁)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </button>
+
+      <!-- 开启系统推送 -->
+      <button class="icon-btn" id="enableNotificationBtn" title="开启手机/桌面推送通知">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+      </button>
+
+      <!-- 快速测试多邻国跳动提醒 -->
+      <button class="icon-btn" id="demoTestAlertBtn" title="模拟多邻国跳动提醒">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+      </button>
+
+      <!-- 白天 / 黑夜模式切换 -->
+      <button class="icon-btn" id="themeToggleBtn" title="切换白天/黑夜模式" aria-label="切换白天/黑夜模式">
+        <svg id="themeIconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg id="themeIconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+
+      <!-- 待复习计数角标 -->
+      <div class="icon-btn" id="headerDueBtn" title="待复习数量">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span class="btn-badge" id="headerDueBadge" style="display:none;">0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主体内容容器 -->
+  <main class="main-content">
+
+    <!-- ============================================== -->
+    <!-- TAB 1: 复习提醒面板 (Review Reminder Stream) -->
+    <!-- ============================================== -->
+    <section class="tab-panel active" id="tab-review">
+      <!-- 顶部提醒状态栏 -->
+      <div class="reminder-header-bar">
+        <div>
+          <h2 class="reminder-section-title">⏰ 艾宾浩斯复习提醒</h2>
+          <p class="reminder-section-subtitle" id="reminderSubtitle">及时过目一次，记忆强化提升 300%</p>
+        </div>
+        <div class="reminder-due-counter">
+          <span class="due-badge-pill" id="dueBadgePill">0 项待复习</span>
+        </div>
+      </div>
+
+      <!-- 待复习项目提醒列表 (直接过目，无需卡片翻转) -->
+      <div id="reminderItemsList" class="reminder-items-list">
+        <!-- 由 JS 渲染待复习项目 -->
+      </div>
+
+      <!-- 空队列状态 (所有到期项目均已复习) -->
+      <div class="empty-queue-card" id="emptyReviewQueue" style="display: none;">
+        <div class="empty-mascot-fig">
+          <svg viewBox="0 0 100 100" fill="none">
+            <circle cx="50" cy="50" r="44" fill="#ecfdf5"/>
+            <polygon points="25,25 35,46 16,42" fill="#fed7aa"/>
+            <polygon points="75,25 84,42 65,46" fill="#fed7aa"/>
+            <ellipse cx="50" cy="55" rx="34" ry="28" fill="#ffffff"/>
+            <!-- 闭眼开心笑 -->
+            <path d="M34 50 Q38 45 42 50" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            <path d="M58 50 Q62 45 66 50" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            <ellipse cx="30" cy="56" rx="4" ry="2" fill="#fda4af"/>
+            <ellipse cx="70" cy="56" rx="4" ry="2" fill="#fda4af"/>
+            <path d="M46 62 Q50 67 54 62" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            <!-- 庆祝金色奖牌 -->
+            <circle cx="50" cy="74" r="8" fill="#f59e0b"/>
+            <polygon points="50,71 52,75 56,75 53,78 54,82 50,79 46,82 47,78 44,75 48,75" fill="#ffffff"/>
+          </svg>
+        </div>
+        <h3 class="empty-title">太棒啦！当前没有待复习项目 🎉</h3>
+        <p class="empty-desc" id="emptyNextNotice">记忆萌喵正在监控您的记忆曲线，新知识到达黄金复习点时，会立即跳动提醒你！</p>
+        <button class="btn btn-primary" onclick="ebbinghausApp.switchTab('tab-new')">
+          ➕ 记录新知识
+        </button>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 2: 记新知面板 (Voice & Text Input) -->
+    <!-- ============================================== -->
+    <section class="tab-panel" id="tab-new">
+      <div class="input-card">
+        <!-- 语音录入大按钮 -->
+        <div class="voice-input-banner">
+          <button type="button" class="voice-mic-btn" id="voiceMicBtn" title="点击开始/停止语音输入">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+          </button>
+          <div class="voice-status-hint">点击麦克风，直接说出新知识</div>
+          <div class="voice-sub-hint">支持自动识别中英文，自动帮您整理为知识卡片</div>
+          <div class="voice-live-text" id="voiceLiveText"></div>
+        </div>
+
+        <!-- 手动录入表单 -->
+        <form id="newKnowledgeForm">
+          <div class="form-group">
+            <label class="form-label" for="knowledgeTitle">知识点 / 关键词 / 概念</label>
+            <input type="text" id="knowledgeTitle" class="form-input" placeholder="例如：Ebbinghaus 曲线核心概念 / 单词..." required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="knowledgeNotes">详细内容 / 助记口诀 / 笔记</label>
+            <textarea id="knowledgeNotes" class="form-textarea" placeholder="填写详细解析、例句或联想记忆口诀..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="knowledgeTag">分类标签</label>
+            <input type="text" id="knowledgeTag" class="form-input" placeholder="自定义标签，如：英语 / 考研 / 编程..." value="日常新知">
+            <div class="tag-preset-wrap">
+              <span class="tag-preset-chip active" data-tag="日常新知">日常新知</span>
+              <span class="tag-preset-chip" data-tag="英语单词">英语单词</span>
+              <span class="tag-preset-chip" data-tag="计算机编程">计算机编程</span>
+              <span class="tag-preset-chip" data-tag="考研冲刺">考研冲刺</span>
+              <span class="tag-preset-chip" data-tag="生活百科">生活百科</span>
+              <span class="tag-preset-chip" data-tag="专业概念">专业概念</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="customIntervalSelect">复习提醒周期策略</label>
+            <select id="customIntervalSelect" class="form-select">
+              <option value="standard" selected>标准艾宾浩斯曲线 (5分, 30分, 12时, 1天, 2天, 4天, 7天, 15天, 30天)</option>
+              <option value="daily">每日轻量复习 (12小时, 1天, 2天, 4天, 7天, 15天, 30天)</option>
+              <option value="fast">1分钟极速测试模式 (快速体验手机端跳动提醒)</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1rem;">
+            💾 确认记录并启动艾宾浩斯提醒
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 3: 知识库面板 (Knowledge Base List) -->
+    <!-- ============================================== -->
+    <section class="tab-panel" id="tab-library">
+      <div class="search-filter-bar">
+        <input type="text" id="knowledgeSearchInput" class="form-input" style="flex: 2;" placeholder="🔍 搜索已录入的知识点...">
+        <select id="filterTagSelect" class="form-select" style="flex: 1;">
+          <option value="all">全部分类</option>
+          <option value="日常新知">日常新知</option>
+          <option value="英语单词">英语单词</option>
+          <option value="计算机编程">计算机编程</option>
+          <option value="考研冲刺">考研冲刺</option>
+          <option value="生活百科">生活百科</option>
+          <option value="专业概念">专业概念</option>
+        </select>
+      </div>
+
+      <div id="knowledgeList">
+        <!-- 动态渲染卡片列表 -->
+      </div>
+
+      <!-- 本地备份与导出 -->
+      <div style="margin-top: 24px; padding: 16px; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h4 style="font-size: 0.95rem; font-weight: 700;">数据完全储存在您手机本地</h4>
+          <p style="font-size: 0.78rem; color: var(--text-muted);">随时备份导出 JSON，绝无隐私泄露</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary" id="exportBackupBtn" style="padding: 6px 12px; font-size: 0.8rem;">📥 备份导出</button>
+          <label class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; cursor: pointer;">
+            📤 恢复数据
+            <input type="file" id="importBackupInput" accept=".json" style="display:none;">
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 4: 艾宾浩斯曲线与统计 (Stats & Chart) -->
+    <!-- ============================================== -->
+    <section class="tab-panel" id="tab-stats">
+      <!-- 4 大核心数据看板 -->
+      <div class="stats-grid">
+        <div class="stat-metric-card">
+          <div class="stat-number" id="statTotalCount">0</div>
+          <div class="stat-label">已录入总知识</div>
+        </div>
+        <div class="stat-metric-card">
+          <div class="stat-number" style="color: var(--rose);" id="statDueCount">0</div>
+          <div class="stat-label">今日待复习</div>
+        </div>
+        <div class="stat-metric-card">
+          <div class="stat-number" style="color: var(--amber);" id="statMasteredCount">0</div>
+          <div class="stat-label">已形成永久记忆</div>
+        </div>
+        <div class="stat-metric-card">
+          <div class="stat-number" style="color: var(--indigo);" id="statStreakDays">1天 🔥</div>
+          <div class="stat-label">连续抗遗忘打卡</div>
+        </div>
+      </div>
+
+      <!-- 艾宾浩斯遗忘曲线直观动态图表 -->
+      <div class="curve-chart-card">
+        <h3 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span>艾宾浩斯遗忘与强化曲线</span>
+          <span style="font-size: 0.75rem; color: var(--primary); font-weight: 600;">绿色向上跃迁 = 复习巩固</span>
+        </h3>
+        <svg viewBox="0 0 500 240" class="curve-svg">
+          <!-- 网格线 -->
+          <line x1="50" y1="30" x2="470" y2="30" stroke="#e2e8f0" stroke-dasharray="4 4"/>
+          <line x1="50" y1="80" x2="470" y2="80" stroke="#e2e8f0" stroke-dasharray="4 4"/>
+          <line x1="50" y1="130" x2="470" y2="130" stroke="#e2e8f0" stroke-dasharray="4 4"/>
+          <line x1="50" y1="180" x2="470" y2="180" stroke="#cbd5e1" stroke-width="1.5"/>
+          <line x1="50" y1="20" x2="50" y2="180" stroke="#cbd5e1" stroke-width="1.5"/>
+
+          <!-- 坐标文字 -->
+          <text x="42" y="34" font-size="10" fill="#94a3b8" text-anchor="end">100%</text>
+          <text x="42" y="84" font-size="10" fill="#94a3b8" text-anchor="end">58%</text>
+          <text x="42" y="134" font-size="10" fill="#94a3b8" text-anchor="end">33%</text>
+          <text x="42" y="184" font-size="10" fill="#94a3b8" text-anchor="end">0%</text>
+
+          <text x="50" y="196" font-size="10" fill="#94a3b8" text-anchor="middle">初学</text>
+          <text x="120" y="196" font-size="10" fill="#94a3b8" text-anchor="middle">20分钟</text>
+          <text x="210" y="196" font-size="10" fill="#94a3b8" text-anchor="middle">1天</text>
+          <text x="310" y="196" font-size="10" fill="#94a3b8" text-anchor="middle">7天</text>
+          <text x="440" y="196" font-size="10" fill="#94a3b8" text-anchor="middle">30天</text>
+
+          <!-- 原始未复习自然遗忘红色急速衰退曲线 -->
+          <path d="M 50 30 Q 90 135 150 152 T 470 172" fill="none" stroke="#f43f5e" stroke-width="2.5" stroke-dasharray="3 3"/>
+          <text x="260" y="166" font-size="11" fill="#f43f5e" font-weight="700">若不复习：遗忘率达 79%</text>
+
+          <!-- 经过艾宾浩斯多次间隔复习后的阶梯强化记忆绿色曲线 -->
+          <path d="M 50 30 Q 80 80 110 88 
+                   L 110 32 
+                   Q 160 55 210 65 
+                   L 210 32 
+                   Q 260 45 310 50 
+                   L 310 32 
+                   Q 380 38 470 40" 
+                fill="none" stroke="#10b981" stroke-width="3.5" stroke-linecap="round"/>
+
+          <!-- 关键强化节点圆点 -->
+          <circle cx="110" cy="32" r="5" fill="#10b981"/>
+          <circle cx="210" cy="32" r="5" fill="#10b981"/>
+          <circle cx="310" cy="32" r="5" fill="#10b981"/>
+          <circle cx="470" cy="40" r="6" fill="#f59e0b"/>
+
+          <text x="340" y="24" font-size="11" fill="#10b981" font-weight="800">间隔强化：化为终身长期记忆 ✨</text>
+        </svg>
+      </div>
+
+      <!-- 阶段里程碑说明 -->
+      <div class="stage-milestones-list">
+        <h4 style="font-size: 1rem; font-weight: 800; margin-bottom: 12px;">艾宾浩斯标准 9 级记忆阶梯</h4>
+        <div class="stage-step-item">
+          <div class="stage-step-num">1</div>
+          <div class="stage-step-info">
+            <div class="stage-step-title">识记 5 分钟后</div>
+            <div class="stage-step-desc">第一次即时记忆唤醒，将感知信息迅速编入海马体缓存</div>
+          </div>
+        </div>
+        <div class="stage-step-item">
+          <div class="stage-step-num">2</div>
+          <div class="stage-step-info">
+            <div class="stage-step-title">识记 30 分钟后</div>
+            <div class="stage-step-desc">遗忘临界急速下滑点，第2次强力拉升记忆保留率至 100%</div>
+          </div>
+        </div>
+        <div class="stage-step-item">
+          <div class="stage-step-num">3</div>
+          <div class="stage-step-info">
+            <div class="stage-step-title">识记 12 小时后 (当晚)</div>
+            <div class="stage-step-desc">睡眠前加固，让大脑在夜间慢波睡眠中执行突触记忆重放</div>
+          </div>
+        </div>
+        <div class="stage-step-item">
+          <div class="stage-step-num">4</div>
+          <div class="stage-step-info">
+            <div class="stage-step-title">识记 1 天 / 2 天 / 4 天后</div>
+            <div class="stage-step-desc">中期记忆固化，神经回路连接加深，抵御日常信息干扰</div>
+          </div>
+        </div>
+        <div class="stage-step-item">
+          <div class="stage-step-num">5</div>
+          <div class="stage-step-info">
+            <div class="stage-step-title">识记 7 天 / 15 天 / 30 天后</div>
+            <div class="stage-step-desc">长期记忆永久化，形成条件反射式牢固本能，终生不忘！</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 隐私安全与数据备份管理卡片 -->
+      <div class="stats-card privacy-settings-card" style="margin-top: 20px;">
+        <div class="stats-card-header">
+          <div class="stats-card-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 class="stats-card-title">隐私安全与数据管理</h3>
+            <p class="stats-card-sub">本地专属存储 · 密码保护与离线备份</p>
+          </div>
+        </div>
+
+        <div class="privacy-settings-body">
+          <div class="privacy-setting-row">
+            <div>
+              <div class="privacy-setting-title">专属访问密码 (PIN)</div>
+              <div class="privacy-setting-desc" id="pinStatusText">正在保护您的知识笔记</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="changePinBtn">修改密码</button>
+          </div>
+
+          <div class="privacy-setting-row">
+            <div>
+              <div class="privacy-setting-title">记住此设备免密访问</div>
+              <div class="privacy-setting-desc">开启后本机打开无需每次重复输密码</div>
+            </div>
+            <label class="switch-toggle">
+              <input type="checkbox" id="trustDeviceToggle" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="privacy-backup-actions">
+            <button class="btn btn-secondary btn-sm" id="exportBackupBtn">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              导出备份 (JSON)
+            </button>
+            <label class="btn btn-secondary btn-sm" style="margin: 0; cursor: pointer;">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              恢复备份
+              <input type="file" id="importBackupFileInput" accept=".json" style="display: none;">
+            </label>
+            <button class="btn btn-secondary btn-sm" id="lockNowBtn" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+              🔒 立即锁屏
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================== -->
+  <!-- 多邻国风格跳动萌猫弹窗 (Duolingo-style Mascot Alert) -->
+  <!-- ============================================== -->
+  <div class="mascot-alert-overlay" id="mascotAlertModal">
+    <div class="mascot-alert-card">
+      <!-- 兴奋跳跃的大萌猫动画 SVG -->
+      <div class="mascot-bounce-figure">
+        <svg viewBox="0 0 100 100" fill="none">
+          <circle cx="50" cy="50" r="46" fill="#10b981"/>
+          <!-- 耳朵动效 -->
+          <polygon points="22,20 35,46 14,40" fill="#fed7aa"/>
+          <polygon points="78,20 86,40 65,46" fill="#fed7aa"/>
+          <!-- 脸蛋 -->
+          <ellipse cx="50" cy="55" rx="34" ry="28" fill="#ffffff"/>
+          <!-- 眨眼放光大眼睛 -->
+          <circle cx="38" cy="48" r="6" fill="#1e293b"/>
+          <circle cx="62" cy="48" r="6" fill="#1e293b"/>
+          <circle cx="36" cy="46" r="2.2" fill="#ffffff"/>
+          <circle cx="60" cy="46" r="2.2" fill="#ffffff"/>
+          <!-- 萌腮红 -->
+          <ellipse cx="28" cy="56" rx="5" ry="3" fill="#f43f5e"/>
+          <ellipse cx="72" cy="56" rx="5" ry="3" fill="#f43f5e"/>
+          <!-- 张开开心大笑的小嘴巴 -->
+          <polygon points="50,54 45,58 55,58" fill="#f59e0b"/>
+          <path d="M43 61 Q50 72 57 61 Z" fill="#e11d48"/>
+          <!-- 博士帽 -->
+          <polygon points="50,12 82,22 50,32 18,22" fill="#0f172a"/>
+          <circle cx="50" cy="22" r="2.5" fill="#f59e0b"/>
+          <line x1="50" y1="22" x2="74" y2="34" stroke="#f59e0b" stroke-width="2"/>
+        </svg>
+      </div>
+
+      <!-- 对话气泡 -->
+      <div class="mascot-speech-bubble">
+        🦉 该复习啦！别让遗忘曲线把它偷走！
+      </div>
+
+      <h3 class="alert-title" id="mascotAlertTitle">大脑遗忘警报！</h3>
+      <p class="alert-desc" id="mascotAlertMsg">到达艾宾浩斯强化黄金点！</p>
+
+      <!-- 弹窗直接展示需要复习的内容，用户10秒直接过目，无需翻卡 -->
+      <div class="mascot-alert-content-box" id="mascotAlertContentBox" style="display:none;">
+        <div class="alert-content-title" id="alertContentTitle"></div>
+        <div class="alert-content-notes" id="alertContentNotes"></div>
+      </div>
+
+      <div class="alert-actions">
+        <button class="btn btn-primary" id="mascotAlertQuickDoneBtn" style="padding: 14px; font-size: 1.05rem;">
+          ✅ 已过目，完成本次复习！
+        </button>
+        <button class="btn btn-secondary" id="mascotAlertClose">
+          ⏰ 稍后 5 分钟再提醒我
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 屏幕右下角常驻悬浮萌猫按键 (FAB) -->
+  <div class="mascot-fab" id="mascotFab" title="点击查看复习进度">
+    <div class="mascot-fab-icon">
+      <svg viewBox="0 0 100 100" fill="none">
+        <circle cx="50" cy="50" r="46" fill="#10b981"/>
+        <polygon points="25,25 35,46 16,42" fill="#fed7aa"/>
+        <polygon points="75,25 84,42 65,46" fill="#fed7aa"/>
+        <ellipse cx="50" cy="55" rx="34" ry="28" fill="#ffffff"/>
+        <circle cx="38" cy="50" r="4.5" fill="#1e293b"/>
+        <circle cx="62" cy="50" r="4.5" fill="#1e293b"/>
+        <ellipse cx="30" cy="58" rx="4" ry="2" fill="#fda4af"/>
+        <ellipse cx="70" cy="58" rx="4" ry="2" fill="#fda4af"/>
+        <polygon points="50,56 46,60 54,60" fill="#f59e0b"/>
+      </svg>
+    </div>
+    <span class="mascot-fab-badge" id="mascotFabBadge" style="display:none;">0</span>
+  </div>
+
+  <!-- 底部移动端原生式导航栏 -->
+  <nav class="bottom-nav-bar">
+    <button class="nav-tab-btn active" data-tab="tab-review">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+      </svg>
+      <span>待复习</span>
+      <span class="nav-tab-badge" id="navDueBadge" style="display:none;">0</span>
+    </button>
+
+    <button class="nav-tab-btn" data-tab="tab-new">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="16"></line>
+        <line x1="8" y1="12" x2="16" y2="12"></line>
+      </svg>
+      <span>记新知</span>
+    </button>
+
+    <button class="nav-tab-btn" data-tab="tab-library">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+      </svg>
+      <span>知识库</span>
+    </button>
+
+    <button class="nav-tab-btn" data-tab="tab-stats">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"></line>
+        <line x1="12" y1="20" x2="12" y2="4"></line>
+        <line x1="6" y1="20" x2="6" y2="14"></line>
+      </svg>
+      <span>曲线统计</span>
+  </nav>
+
+  <!-- ============================================== -->
+  <!-- 私人隐私密码锁界面 (PIN Lock Modal) -->
+  <!-- ============================================== -->
+  <div class="pin-lock-overlay" id="pinLockOverlay" style="display:none;">
+    <div class="pin-lock-card">
+      <div class="pin-lock-mascot">
+        <svg viewBox="0 0 100 100" fill="none">
+          <circle cx="50" cy="50" r="46" fill="#10b981"/>
+          <polygon points="25,25 35,46 16,42" fill="#fed7aa"/>
+          <polygon points="75,25 84,42 65,46" fill="#fed7aa"/>
+          <ellipse cx="50" cy="55" rx="34" ry="28" fill="#ffffff"/>
+          <circle cx="38" cy="50" r="4.5" fill="#1e293b"/>
+          <circle cx="62" cy="50" r="4.5" fill="#1e293b"/>
+          <ellipse cx="30" cy="58" rx="4" ry="2" fill="#fda4af"/>
+          <ellipse cx="70" cy="58" rx="4" ry="2" fill="#fda4af"/>
+          <polygon points="50,56 46,60 54,60" fill="#f59e0b"/>
+          <!-- 锁徽章 -->
+          <circle cx="50" cy="80" r="13" fill="#0f172a"/>
+          <rect x="44" y="78" width="12" height="9" rx="2" fill="#f59e0b"/>
+          <path d="M47 78 V74 A3 3 0 0 1 53 74 V78" stroke="#f59e0b" stroke-width="1.8" fill="none"/>
+        </svg>
+      </div>
+
+      <h2 class="pin-lock-title" id="pinLockTitle">🔒 私人专属复习空间</h2>
+      <p class="pin-lock-desc" id="pinLockDesc">请输入专属访问密码解锁</p>
+
+      <div class="pin-input-group">
+        <input type="password" id="pinCodeInput" class="pin-code-input" placeholder="输入密码 / PIN" maxlength="20" autocomplete="off" inputmode="numeric">
+        <button class="btn btn-primary pin-unlock-btn" id="pinUnlockBtn">解锁进入</button>
+      </div>
+
+      <div class="pin-options">
+        <label class="pin-checkbox-label">
+          <input type="checkbox" id="pinRememberDeviceCheckbox" checked>
+          <span>记住此设备（本机下次免密直接进入）</span>
+        </label>
+      </div>
+
+      <div class="pin-error-msg" id="pinErrorMsg" style="display:none;"></div>
+      
+      <div class="pin-privacy-badge">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        <span>个人学习笔记全部存储在您手机本地 · 绝对隐私</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

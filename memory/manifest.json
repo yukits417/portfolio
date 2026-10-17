@@ -1,0 +1,21 @@
+{
+  "name": "艾宾浩斯复习助手 - 记忆萌喵",
+  "short_name": "艾宾复习",
+  "description": "基于艾宾浩斯遗忘曲线的智能语音与文字复习提醒应用",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
